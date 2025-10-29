@@ -51,10 +51,11 @@ class BrowserNotifier extends StateNotifier<BrowserState> {
     }
   }
   
-  void addNewTab({String? url}) {
+  void addNewTab({String? url, bool incognito = false}) {
     final newTab = BrowserTab(
-      title: 'New Tab',
+      title: incognito ? 'Incognito' : 'New Tab',
       url: url ?? 'about:blank',
+      incognito: incognito,
     );
     
     final updatedTabs = [...state.tabs, newTab];
@@ -124,8 +125,10 @@ class BrowserNotifier extends StateNotifier<BrowserState> {
       );
       updateActiveTab(updatedTab);
       
-      // Add to history
-      StorageService.addToHistory(url, updatedTab.title);
+      // Add to history unless incognito
+      if (!updatedTab.incognito) {
+        StorageService.addToHistory(url, updatedTab.title);
+      }
     }
   }
   
@@ -154,7 +157,9 @@ class BrowserNotifier extends StateNotifier<BrowserState> {
   }
   
   void _saveTabs() {
-    StorageService.saveTabs(state.tabs);
+    // Do not persist incognito tabs
+    final nonIncognito = state.tabs.where((t) => !t.incognito).toList();
+    StorageService.saveTabs(nonIncognito);
   }
 }
 

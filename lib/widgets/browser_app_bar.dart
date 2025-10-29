@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/browser_provider.dart';
 import '../services/system_integration_service.dart';
 
@@ -134,19 +135,22 @@ class BrowserAppBar extends ConsumerWidget {
             onSelected: (value) {
               switch (value) {
                 case 'bookmarks':
-                  // Navigate to bookmarks
+                  context.go('/bookmarks');
                   break;
                 case 'history':
-                  // Navigate to history
+                  context.go('/history');
                   break;
                 case 'account':
-                  // Navigate to account
+                  context.go('/account');
                   break;
                 case 'settings':
                   onSettings();
                   break;
+                case 'new_incognito_tab':
+                  ref.read(browserProvider.notifier).addNewTab(incognito: true);
+                  break;
                 case 'pin_taskbar':
-                  _pinToTaskbar();
+                  _pinToTaskbar(context);
                   break;
                 case 'dev_tools':
                   onToggleDevTools();
@@ -196,6 +200,16 @@ class BrowserAppBar extends ConsumerWidget {
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
+                value: 'new_incognito_tab',
+                child: Row(
+                  children: [
+                    Icon(Icons.visibility_off),
+                    SizedBox(width: 8),
+                    Text('New Incognito Tab'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
                 value: 'dev_tools',
                 child: Row(
                   children: [
@@ -237,7 +251,7 @@ class BrowserAppBar extends ConsumerWidget {
     return Theme.of(context).colorScheme.onSurface;
   }
   
-  void _pinToTaskbar() async {
+  void _pinToTaskbar(BuildContext context) async {
     try {
       await SystemIntegrationService.pinToTaskbar();
       ScaffoldMessenger.of(context).showSnackBar(

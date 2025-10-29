@@ -13,6 +13,12 @@ import 'services/storage_service.dart';
 import 'services/system_integration_service.dart';
 import 'services/mcp_server.dart';
 import 'services/account_service.dart';
+import 'services/window_manager_service.dart';
+import 'services/networking_service.dart';
+import 'services/autofill_service.dart';
+import 'services/sandboxing_service.dart';
+import 'services/rendering_engine_service.dart';
+import 'services/agent_client_protocol.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,9 +36,17 @@ void main() async {
   // Initialize Account Service
   await AccountService.init();
   
+  // Initialize core services
+  await NetworkingService.init();
+  await AutofillService.init();
+  SandboxingService.init();
+  RenderingEngineService.init();
+  await AgentClientProtocol.init();
+  
   // Desktop window setup
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await windowManager.ensureInitialized();
+    await WindowManagerService.init();
     await windowManager.setTitle('Titan Browser');
     await windowManager.setMinimumSize(const Size(1200, 800));
     

@@ -11,9 +11,22 @@ import '../widgets/ai_assistant_toggle.dart';
 import '../widgets/developer_tools_panel.dart';
 import '../services/storage_service.dart';
 import '../services/browser_engine_service.dart';
+import '../services/incognito_service.dart';
+import '../services/autofill_service.dart';
+import '../services/sandboxing_service.dart';
+import '../services/rendering_engine_service.dart';
+import '../services/networking_service.dart';
+import '../services/browser_bridge.dart';
 
 class BrowserScreen extends ConsumerStatefulWidget {
-  const BrowserScreen({super.key});
+  final String? windowId;
+  final bool isIncognito;
+  
+  const BrowserScreen({
+    super.key,
+    this.windowId,
+    this.isIncognito = false,
+  });
 
   @override
   ConsumerState<BrowserScreen> createState() => _BrowserScreenState();
@@ -30,7 +43,15 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
   @override
   void initState() {
     super.initState();
-    BrowserEngineService.init();
+    _initializeServices();
+  }
+  
+  void _initializeServices() async {
+    await BrowserEngineService.init();
+    await NetworkingService.init();
+    await AutofillService.init();
+    SandboxingService.init();
+    RenderingEngineService.init();
   }
 
   void _updateNavigationState() async {
@@ -153,7 +174,62 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
                                         onWebViewCreated: (controller) {
                                           _webViewController = controller;
                                           BrowserEngineService.registerController(activeTab.id, controller);
-                                          
+
+                                          // Wire BrowserBridge so MCP/tools can drive the browser
+                                          BrowserBridge.navigateToUrl = (String url) async {
+                                            _navigateToUrl(url);
+                                            return 'Navigated to: ' + url;
+                                          };
+                                          BrowserBridge.clickElement = (String selector) async {
+                                            final js = "(() => { const el = document.querySelector('" + selector.replaceAll("'", "\\'") + "'); if (el) { el.click(); return 'ok'; } return 'not_found'; })()";
+                                            await _webViewController?.evaluateJavascript(source: js);
+                                            return 'Clicked: ' + selector;
+                                          };
+                                          BrowserBridge.extract = (String selector, {String? attribute}) async {
+                                            final attr = attribute ?? 'textContent';
+                                            final js = "(() => { const el = document.querySelector('" + selector.replaceAll("'", "\\'") + "'); if (!el) return ''; const v = el['" + attr + "']; return (v || '').toString(); })()";
+                                            final res = await _webViewController?.evaluateJavascript(source: js);
+                                            return res?.toString() ?? '';
+                                          };
+                                          BrowserBridge.fillForm = (Map<String, dynamic> fields) async {
+                                            final entries = fields.entries.map((e) => "{sel: '" + e.key.replaceAll("'", "\\'") + "', val: '" + (e.value?.toString() ?? '').replaceAll("'", "\\'") + "'}").join(',');
+                                            final js = "(() => { const fields = [" + entries + "]; fields.forEach(f => { const el = document.querySelector(f.sel); if (el) { el.value = f.val; el.dispatchEvent(new Event('input', {bubbles:true})); } }); return 'ok'; })()";
+                                            await _webViewController?.evaluateJavascript(source: js);
+                                            return 'Form filled';
+                                          };
+                                          BrowserBridge.getPageContent = () async {
+                                            final js = "document.documentElement.outerHTML";
+                                            final res = await _webViewController?.evaluateJavascript(source: js);
+                                            return res?.toString() ?? '';
+                                          };
+                                          BrowserBridge.getTabsInfo = () async {
+                                            final tabs = ref.read(browserProvider).tabs;
+                                            return tabs.map((t) => {
+                                              'id': t.id,
+                                              'title': t.title,
+                                              'url': t.url,
+                                              'isLoading': t.isLoading,
+                                              'canGoBack': t.canGoBack,
+                                              'canGoForward': t.canGoForward,
+                                              'incognito': t.incognito,
+                                              'lastAccessed': t.lastAccessed.toIso8601String(),
+                                            }).toList();
+                                          };
+                                          BrowserBridge.getCurrentTab = () async {
+                                            final t = ref.read(browserProvider).activeTab;
+                                            if (t == null) return null;
+                                            return {
+                                              'id': t.id,
+                                              'title': t.title,
+                                              'url': t.url,
+                                              'isLoading': t.isLoading,
+                                              'canGoBack': t.canGoBack,
+                                              'canGoForward': t.canGoForward,
+                                              'incognito': t.incognito,
+                                              'lastAccessed': t.lastAccessed.toIso8601String(),
+                                            };
+                                          };
+
                                           // Add JavaScript handlers
                                           controller.addJavaScriptHandler(
                                             handlerName: 'aiContextReady',
@@ -202,10 +278,13 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
                                           await BrowserEngineService.injectAIContextScript(controller);
                                           _updatePageContext();
                                           
-                                          // Add to history
+                                          // Add to history (skip internal schemes and incognito)
                                           if (url != null && !url.toString().startsWith('titan://')) {
-                                            final title = await controller.getTitle() ?? 'Untitled';
-                                            StorageService.addToHistory(url.toString(), title);
+                                            final current = ref.read(browserProvider).activeTab;
+                                            if (current == null || !current.incognito) {
+                                              final title = await controller.getTitle() ?? 'Untitled';
+                                              StorageService.addToHistory(url.toString(), title);
+                                            }
                                           }
                                         },
                                         shouldOverrideUrlLoading: (controller, navigationAction) async {

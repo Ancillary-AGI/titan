@@ -9,6 +9,7 @@ class BrowserTab {
   bool canGoForward;
   DateTime lastAccessed;
   String? favicon;
+  bool incognito;
   
   BrowserTab({
     String? id,
@@ -19,6 +20,7 @@ class BrowserTab {
     this.canGoForward = false,
     DateTime? lastAccessed,
     this.favicon,
+    this.incognito = false,
   }) : id = id ?? const Uuid().v4(),
        lastAccessed = lastAccessed ?? DateTime.now();
   
@@ -30,6 +32,7 @@ class BrowserTab {
     bool? canGoForward,
     DateTime? lastAccessed,
     String? favicon,
+    bool? incognito,
   }) {
     return BrowserTab(
       id: id,
@@ -40,6 +43,7 @@ class BrowserTab {
       canGoForward: canGoForward ?? this.canGoForward,
       lastAccessed: lastAccessed ?? this.lastAccessed,
       favicon: favicon ?? this.favicon,
+      incognito: incognito ?? this.incognito,
     );
   }
   
@@ -53,6 +57,7 @@ class BrowserTab {
       'canGoForward': canGoForward,
       'lastAccessed': lastAccessed.toIso8601String(),
       'favicon': favicon,
+      'incognito': incognito,
     };
   }
   
@@ -66,6 +71,7 @@ class BrowserTab {
       canGoForward: json['canGoForward'] ?? false,
       lastAccessed: DateTime.parse(json['lastAccessed']),
       favicon: json['favicon'],
+      incognito: json['incognito'] ?? false,
     );
   }
 }

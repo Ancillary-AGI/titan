@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/ai_task.dart';
 import '../services/ai_service.dart';
 import '../providers/browser_provider.dart';
+import '../services/browser_bridge.dart';
 
 class MCPServer {
   static HttpServer? _server;
@@ -373,43 +374,45 @@ class MCPServer {
   
   // Tool implementations
   static Future<String> _navigateToUrl(String url) async {
-    // Implementation would integrate with browser provider
-    return 'Navigated to: $url';
+    if (BrowserBridge.navigateToUrl == null) throw Exception('Browser not ready');
+    return await BrowserBridge.navigateToUrl!(url);
   }
   
   static Future<String> _clickElement(String selector) async {
-    // Implementation would integrate with WebView
-    return 'Clicked element: $selector';
+    if (BrowserBridge.clickElement == null) throw Exception('Browser not ready');
+    return await BrowserBridge.clickElement!(selector);
   }
   
   static Future<String> _extractText(String selector) async {
-    // Implementation would extract text from WebView
-    return 'Extracted text from: $selector';
+    if (BrowserBridge.extract == null) throw Exception('Browser not ready');
+    return await BrowserBridge.extract!(selector);
   }
   
   static Future<String> _fillForm(Map<String, dynamic> fields) async {
-    // Implementation would fill form fields
-    return 'Filled form fields: ${fields.keys.join(', ')}';
+    if (BrowserBridge.fillForm == null) throw Exception('Browser not ready');
+    return await BrowserBridge.fillForm!(fields);
   }
   
   static Future<String> _takeScreenshot(bool fullPage) async {
-    // Implementation would take screenshot
-    return 'Screenshot taken (fullPage: $fullPage)';
+    // Not yet implemented in BrowserBridge
+    return 'Screenshot not implemented (fullPage: $fullPage)';
   }
   
   static Future<String> _getCurrentPageContent() async {
-    // Implementation would get current page HTML
-    return '<html><body>Current page content</body></html>';
+    if (BrowserBridge.getPageContent == null) throw Exception('Browser not ready');
+    return await BrowserBridge.getPageContent!();
   }
   
   static Future<String> _searchWeb(String query) async {
-    // Implementation would perform web search
+    // Naive search using default engine by navigating
+    if (BrowserBridge.navigateToUrl == null) throw Exception('Browser not ready');
+    await BrowserBridge.navigateToUrl!(query);
     return 'Searched for: $query';
   }
   
   static Future<List<Map<String, dynamic>>> _getTabsInfo() async {
-    // Implementation would get tabs from browser provider
-    return [];
+    if (BrowserBridge.getTabsInfo == null) return [];
+    return await BrowserBridge.getTabsInfo!();
   }
   
   static Future<List<Map<String, dynamic>>> _getHistoryInfo() async {

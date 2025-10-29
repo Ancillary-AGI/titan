@@ -4,6 +4,10 @@ import '../services/storage_service.dart';
 import '../services/ai_service.dart';
 import '../services/system_integration_service.dart';
 import '../services/mcp_server.dart';
+import '../services/autofill_service.dart';
+import '../services/sandboxing_service.dart';
+import '../services/rendering_engine_service.dart';
+import '../services/networking_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -21,6 +25,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _aiAssistantEnabled = true;
   bool _launchAtStartup = false;
   bool _mcpServerEnabled = true;
+  bool _autofillEnabled = true;
+  bool _savePasswords = true;
+  bool _adBlockEnabled = true;
+  bool _javascriptEnabled = true;
+  SandboxLevel _sandboxLevel = SandboxLevel.basic;
   
   final Map<String, String> _searchEngines = {
     'Google': 'https://www.google.com/search?q=',
@@ -42,6 +51,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _aiAssistantEnabled = StorageService.aiAssistantEnabled;
     _launchAtStartup = await SystemIntegrationService.isLaunchAtStartupEnabled();
     _mcpServerEnabled = StorageService.getSetting<bool>('mcp_server_enabled') ?? true;
+    _autofillEnabled = AutofillService.isEnabled;
+    _savePasswords = AutofillService.savePasswords;
+    _adBlockEnabled = BrowserEngineService.isAdBlockEnabled;
+    _javascriptEnabled = BrowserEngineService.isJavaScriptEnabled;
+    _sandboxLevel = SandboxingService.defaultSandboxLevel;
     
     final currentSearchEngine = StorageService.defaultSearchEngine;
     _selectedSearchEngine = _searchEngines.entries
@@ -207,6 +221,101 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         }
                       },
                       child: const Text('Pin'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Autofill & Passwords
+          _buildSectionHeader('Autofill & Passwords'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text('Enable Autofill'),
+                    subtitle: const Text('Automatically fill forms and login fields'),
+                    value: _autofillEnabled,
+                    onChanged: (value) async {
+                      await AutofillService.setEnabled(value);
+                      setState(() => _autofillEnabled = value);
+                    },
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('Save Passwords'),
+                    subtitle: const Text('Offer to save passwords when you sign in'),
+                    value: _savePasswords,
+                    onChanged: (value) async {
+                      await AutofillService.setSavePasswords(value);
+                      setState(() => _savePasswords = value);
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('Manage Passwords'),
+                    subtitle: const Text('View and manage saved passwords'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      // Navigate to password manager
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Security & Privacy
+          _buildSectionHeader('Security & Privacy'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text('Block Ads'),
+                    subtitle: const Text('Block advertisements and trackers'),
+                    value: _adBlockEnabled,
+                    onChanged: (value) {
+                      BrowserEngineService.toggleAdBlock();
+                      setState(() => _adBlockEnabled = value);
+                    },
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('Enable JavaScript'),
+                    subtitle: const Text('Allow websites to run JavaScript'),
+                    value: _javascriptEnabled,
+                    onChanged: (value) {
+                      BrowserEngineService.toggleJavaScript();
+                      setState(() => _javascriptEnabled = value);
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('Sandbox Level'),
+                    subtitle: Text('Current: ${_sandboxLevel.name}'),
+                    trailing: DropdownButton<SandboxLevel>(
+                      value: _sandboxLevel,
+                      items: SandboxLevel.values.map((level) {
+                        return DropdownMenuItem(
+                          value: level,
+                          child: Text(level.name),
+                        );
+                      }).toList(),
+                      onChanged: (level) {
+                        if (level != null) {
+                          SandboxingService.setDefaultSandboxLevel(level);
+                          setState(() => _sandboxLevel = level);
+                        }
+                      },
                     ),
                   ),
                 ],
