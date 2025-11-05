@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../models/browser_tab.dart';
 import '../services/storage_service.dart';
+import '../services/browser_security_service.dart';
+import '../services/javascript_engine_service.dart';
+import '../services/sandboxing_service.dart';
 
 class BrowserEngineService {
   static late InAppWebViewController? _controller;
@@ -15,6 +18,11 @@ class BrowserEngineService {
   static bool _cookiesEnabled = true;
   
   static Future<void> init() async {
+    // Initialize security services
+    await BrowserSecurityService.initialize();
+    await JavaScriptEngineService.initialize();
+    SandboxingService.init();
+    
     // Load blocked domains for ad blocking
     await _loadBlockedDomains();
     
@@ -62,7 +70,7 @@ class BrowserEngineService {
       thirdPartyCookiesEnabled: _cookiesEnabled,
       
       // Developer tools
-      debuggingEnabled: true,
+      // debuggingEnabled: true, // Not available in current version
       
       // Custom user agent
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) TitanBrowser/1.0.0 Chrome/120.0.0.0 Safari/537.36',
@@ -87,13 +95,25 @@ class BrowserEngineService {
     );
   }
   
-  static void registerController(String tabId, InAppWebViewController controller) {
+  static Future<void> registerController(String tabId, InAppWebViewController controller) async {
     _tabControllers[tabId] = controller;
     _controller = controller;
+    
+    // Register with security services
+    await JavaScriptEngineService.registerController(tabId, controller);
+    await SandboxingService.createTabIsolate(tabId);
+    
+    // Setup security handlers
+    await _setupSecurityHandlers(tabId, controller);
   }
   
-  static void unregisterController(String tabId) {
+  static Future<void> unregisterController(String tabId) async {
     _tabControllers.remove(tabId);
+    
+    // Cleanup security services
+    await JavaScriptEngineService.cleanup(tabId);
+    SandboxingService.removeSandboxPolicy(tabId);
+    BrowserSecurityService.clearTabSecurityEvents(tabId);
   }
   
   static InAppWebViewController? getController(String tabId) {
@@ -102,18 +122,119 @@ class BrowserEngineService {
   
   static InAppWebViewController? get currentController => _controller;
   
-  // Network request interception for ad blocking and custom handling
+  /// Setup security handlers for a tab
+  static Future<void> _setupSecurityHandlers(String tabId, InAppWebViewController controller) async {
+    // Add security-related JavaScript handlers
+    await controller.addJavaScriptHandler(
+      handlerName: 'reportSecurityEvent',
+      callback: (args) => _handleSecurityEvent(tabId, args),
+    );
+    
+    await controller.addJavaScriptHandler(
+      handlerName: 'checkUrlSafety',
+      callback: (args) => _handleUrlSafetyCheck(args),
+    );
+    
+    await controller.addJavaScriptHandler(
+      handlerName: 'validateInput',
+      callback: (args) => _handleInputValidation(args),
+    );
+  }
+  
+  /// Handle security event reports from JavaScript
+  static Future<void> _handleSecurityEvent(String tabId, List<dynamic> args) async {
+    if (args.isEmpty) return;
+    
+    final eventData = args[0] as Map<String, dynamic>;
+    final event = BrowserSecurityService.createSecurityEvent(
+      type: SecurityEventType.values.firstWhere(
+        (e) => e.name == eventData['type'],
+        orElse: () => SecurityEventType.suspiciousScript,
+      ),
+      level: ThreatLevel.values.firstWhere(
+        (e) => e.name == eventData['level'],
+        orElse: () => ThreatLevel.medium,
+      ),
+      tabId: tabId,
+      url: eventData['url'] ?? '',
+      description: eventData['description'] ?? 'Security event detected',
+      metadata: eventData['metadata'] ?? {},
+    );
+    
+    BrowserSecurityService.logSecurityEvent(event);
+  }
+  
+  /// Handle URL safety check requests
+  static Future<Map<String, dynamic>> _handleUrlSafetyCheck(List<dynamic> args) async {
+    if (args.isEmpty) return {'safe': true, 'level': 'none'};
+    
+    final url = args[0].toString();
+    final threatLevel = await BrowserSecurityService.checkUrlSafety(url);
+    
+    return {
+      'safe': threatLevel == ThreatLevel.none,
+      'level': threatLevel.name,
+    };
+  }
+  
+  /// Handle input validation requests
+  static Map<String, dynamic> _handleInputValidation(List<dynamic> args) {
+    if (args.isEmpty) return {'valid': true};
+    
+    final input = args[0].toString();
+    final hasXSS = BrowserSecurityService.detectXSS(input);
+    final hasSQLInjection = BrowserSecurityService.detectSQLInjection(input);
+    
+    return {
+      'valid': !hasXSS && !hasSQLInjection,
+      'threats': {
+        'xss': hasXSS,
+        'sqlInjection': hasSQLInjection,
+      },
+    };
+  }
+
+  // Network request interception for ad blocking and security
   static Future<WebResourceResponse?> shouldInterceptRequest(
     InAppWebViewController controller,
     WebResourceRequest request,
+    String tabId,
   ) async {
     final url = request.url.toString();
+    
+    // Security check - validate URL safety
+    final threatLevel = await BrowserSecurityService.checkUrlSafety(url);
+    if (threatLevel.index >= ThreatLevel.high.index) {
+      // Block dangerous URLs
+      final event = BrowserSecurityService.createSecurityEvent(
+        type: SecurityEventType.maliciousScript,
+        level: threatLevel,
+        tabId: tabId,
+        url: url,
+        description: 'Blocked dangerous URL: $url',
+        blocked: true,
+      );
+      BrowserSecurityService.logSecurityEvent(event);
+      
+      return WebResourceResponse(
+        contentType: 'text/html',
+        data: utf8.encode(_generateBlockedPage(url, threatLevel)),
+      );
+    }
+    
+    // Check sandbox policy
+    if (!SandboxingService.isUrlAllowed(tabId, url)) {
+      return WebResourceResponse(
+        contentType: 'text/plain',
+        data: Uint8List(0),
+      );
+    }
     
     // Ad blocking
     if (_adBlockEnabled && _isBlocked(url)) {
       return WebResourceResponse(
         contentType: 'text/plain',
-        data: Uint8List.fromList([]),
+        data: Uint8List(0),
       );
     }
     
@@ -126,6 +247,91 @@ class BrowserEngineService {
     await _logNetworkRequest(request);
     
     return null; // Allow normal processing
+  }
+  
+  /// Generate blocked page for dangerous URLs
+  static String _generateBlockedPage(String url, ThreatLevel threatLevel) {
+    final threatDescription = {
+      ThreatLevel.high: 'This site may contain malicious content',
+      ThreatLevel.critical: 'This site is known to be dangerous',
+    }[threatLevel] ?? 'This site has been blocked for security reasons';
+    
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Site Blocked - Titan Browser</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: system-ui;
+            margin: 0;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .warning-icon {
+            font-size: 64px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="warning-icon">⚠️</div>
+        <h1>Site Blocked</h1>
+        <p><strong>$threatDescription</strong></p>
+        <p>URL: <code>$url</code></p>
+        <p>Threat Level: <strong>${threatLevel.name.toUpperCase()}</strong></p>
+        
+        <div>
+            <button class="btn btn-primary" onclick="history.back()">Go Back</button>
+            <button class="btn btn-secondary" onclick="window.location.href='titan://newtab'">New Tab</button>
+        </div>
+        
+        <details style="margin-top: 30px; text-align: left;">
+            <summary>Advanced Options</summary>
+            <p><small>If you believe this site has been blocked in error, you can report it to the Titan Browser team.</small></p>
+            <button class="btn btn-secondary" onclick="reportFalsePositive()">Report False Positive</button>
+        </details>
+    </div>
+    
+    <script>
+        function reportFalsePositive() {
+            window.flutter_inappwebview.callHandler('reportFalsePositive', '$url');
+        }
+    </script>
+</body>
+</html>
+    ''';
   }
   
   static bool _isBlocked(String url) {

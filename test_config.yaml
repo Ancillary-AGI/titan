@@ -1,0 +1,89 @@
+# Titan Browser Test Configuration
+
+# Test execution settings
+test_execution:
+  timeout: 30s
+  retry_count: 3
+  parallel_execution: true
+  max_workers: 4
+
+# Platform-specific test settings
+platforms:
+  windows:
+    enabled: true
+    specific_tests:
+      - test/platform/windows_test.dart
+    environment:
+      - FLUTTER_TEST_PLATFORM=windows
+  
+  macos:
+    enabled: true
+    specific_tests:
+      - test/platform/macos_test.dart
+    environment:
+      - FLUTTER_TEST_PLATFORM=macos
+  
+  linux:
+    enabled: true
+    specific_tests:
+      - test/platform/linux_test.dart
+    environment:
+      - FLUTTER_TEST_PLATFORM=linux
+
+# Test categories
+categories:
+  unit_tests:
+    - test/services/**/*_test.dart
+    - test/models/**/*_test.dart
+    - test/providers/**/*_test.dart
+  
+  widget_tests:
+    - test/widget/**/*_test.dart
+    - test/screens/**/*_test.dart
+  
+  integration_tests:
+    - test/integration/**/*_test.dart
+  
+  platform_tests:
+    - test/platform/**/*_test.dart
+
+# Coverage settings
+coverage:
+  enabled: true
+  threshold: 80
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated/**"
+    - "test/**"
+
+# Performance test settings
+performance:
+  memory_limit: 512MB
+  execution_time_limit: 10s
+  
+# Security test settings
+security:
+  xss_protection: true
+  ssl_validation: true
+  input_sanitization: true
+
+# Mock settings
+mocks:
+  network_requests: true
+  file_system: false
+  platform_channels: true
+
+# Reporting
+reporting:
+  formats:
+    - junit
+    - html
+    - json
+  output_directory: test_reports/
+  
+# CI/CD integration
+ci_cd:
+  github_actions: true
+  azure_pipelines: false
+  jenkins: false

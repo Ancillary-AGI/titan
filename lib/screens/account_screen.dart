@@ -360,7 +360,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     );
   }
 
-  void _importFromBrowser(BrowserType browser) async {
+  Future<void> _importFromBrowser(BrowserType browser) async {
     setState(() => _isLoading = true);
     try {
       final data = await BrowserImportService.importFromBrowser(browser);
@@ -385,7 +385,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   void _exportData() async {
     setState(() => _isLoading = true);
     try {
-      final data = await AccountService.exportUserData();
+      await AccountService.exportUserData();
       // Save to file or show export options
       _showErrorSnackBar('Data exported successfully');
     } catch (e) {

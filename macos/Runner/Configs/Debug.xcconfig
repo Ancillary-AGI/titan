@@ -1,0 +1,7 @@
+#include "../../Flutter/Flutter-Debug.xcconfig"
+#include "Warnings.xcconfig"
+#include "AppInfo.xcconfig"
+
+// Debug-specific settings
+FLUTTER_BUILD_MODE = debug
+ENABLE_BITCODE = NO

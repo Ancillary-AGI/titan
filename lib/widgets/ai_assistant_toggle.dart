@@ -421,7 +421,7 @@ class _AIAssistantCollapsiblePaneState extends ConsumerState<AIAssistantCollapsi
           ),
           _QuickActionChip(
             label: 'Extract Data',
-            icon: Icons.data_extraction,
+            icon: Icons.table_chart,
             onTap: () => _handleQuickAction('Extract the main data from this page'),
           ),
           _QuickActionChip(

@@ -146,4 +146,45 @@ node_modules/
 .env
 
 # Stores VSCode versions used for testing VSCode extensions
-.vscode-test
+.vscode-test# Titan Bro
+wser specific
+# Generated files
+*.g.dart
+*.mocks.dart
+*.freezed.dart
+*.config.dart
+
+# Test reports
+test_reports/
+
+# Rust engine
+rust_engine/target/
+rust_engine/Cargo.lock
+
+# Extensions
+extensions/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+
+# Docker
+docker-compose.override.yml
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

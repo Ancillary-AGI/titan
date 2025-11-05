@@ -1,0 +1,7 @@
+#include "../../Flutter/Flutter-Release.xcconfig"
+#include "Warnings.xcconfig"
+#include "AppInfo.xcconfig"
+
+// Release-specific settings
+FLUTTER_BUILD_MODE = release
+ENABLE_BITCODE = NO

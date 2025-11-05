@@ -57,10 +57,10 @@ class _BrowserWindowScreenState extends ConsumerState<BrowserWindowScreen> {
       backgroundColor: Colors.grey[900],
       foregroundColor: Colors.white,
       title: Row(
-        children: [
+        children: const [
           Icon(Icons.security, color: Colors.white),
-          const SizedBox(width: 8),
-          const Text('Incognito Mode'),
+          SizedBox(width: 8),
+          Text('Incognito Mode'),
         ],
       ),
       actions: [

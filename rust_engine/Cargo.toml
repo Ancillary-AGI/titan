@@ -1,0 +1,96 @@
+[package]
+name = "titan_engine"
+version = "0.1.0"
+edition = "2021"
+authors = ["Titan Browser Team"]
+description = "Custom Rust-based browser engine for Titan Browser"
+license = "MIT"
+
+[lib]
+name = "titan_engine"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+# HTML/CSS Parsing
+html5ever = "0.26"
+cssparser = "0.31"
+selectors = "0.25"
+markup5ever = "0.11"
+
+# Layout Engine
+taffy = "0.3"
+euclid = "0.22"
+
+# Rendering
+webrender = "0.62"
+webrender_api = "0.62"
+wgpu = "0.17"
+winit = "0.28"
+
+# JavaScript Runtime
+rusty_v8 = "0.74"
+deno_core = "0.200"
+
+# Networking
+hyper = { version = "0.14", features = ["full"] }
+h3 = "0.0.3"
+quinn = "0.10"
+rustls = { version = "0.21", features = ["dangerous_configuration"] }
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Media
+gstreamer = "0.20"
+gstreamer-video = "0.20"
+gstreamer-audio = "0.20"
+
+# Storage
+rusqlite = { version = "0.29", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# System Integration
+libc = "0.2"
+nix = "0.26"
+windows = { version = "0.48", features = ["Win32_Foundation", "Win32_System_Threading"] }
+
+# Crypto & Security
+ring = "0.16"
+webpki = "0.22"
+rustls-webpki = "0.101"
+
+# Utilities
+log = "0.4"
+env_logger = "0.10"
+anyhow = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+url = "2.4"
+mime = "0.3"
+bytes = "1.4"
+futures = "0.3"
+async-trait = "0.1"
+
+# FFI
+cbindgen = "0.24"
+
+[build-dependencies]
+cbindgen = "0.24"
+
+[features]
+default = ["webrender", "v8", "media"]
+webrender = []
+v8 = ["rusty_v8"]
+media = ["gstreamer"]
+debug = []
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+debug = true
+opt-level = 0

@@ -1,0 +1,5 @@
+[workspace]
+members = [
+  "titan_agent",
+]
+resolver = "2"

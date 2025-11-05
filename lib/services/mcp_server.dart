@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../models/ai_task.dart';
 import '../services/ai_service.dart';
 import '../providers/browser_provider.dart';
 import '../services/browser_bridge.dart';
+import '../services/sidecar_client.dart';
 
 class MCPServer {
   static HttpServer? _server;
@@ -45,15 +47,15 @@ class MCPServer {
     final handler = Pipeline()
         .addMiddleware(logRequests())
         .addMiddleware(_corsMiddleware())
-        .addHandler(router);
+.addHandler(router.call);
     
     try {
-      _server = await serve(handler, 'localhost', _port);
+      _server = await shelf_io.serve(handler, 'localhost', _port);
       _isRunning = true;
       print('MCP Server running on http://localhost:$_port');
     } catch (e) {
       print('Failed to start MCP server: $e');
-      throw e;
+rethrow;
     }
   }
   
@@ -374,16 +376,25 @@ class MCPServer {
   
   // Tool implementations
   static Future<String> _navigateToUrl(String url) async {
+    if (SidecarClient.enabled) {
+      return await SidecarClient.navigate(url);
+    }
     if (BrowserBridge.navigateToUrl == null) throw Exception('Browser not ready');
     return await BrowserBridge.navigateToUrl!(url);
   }
   
   static Future<String> _clickElement(String selector) async {
+    if (SidecarClient.enabled) {
+      return await SidecarClient.click(selector);
+    }
     if (BrowserBridge.clickElement == null) throw Exception('Browser not ready');
     return await BrowserBridge.clickElement!(selector);
   }
   
   static Future<String> _extractText(String selector) async {
+    if (SidecarClient.enabled) {
+      return await SidecarClient.extract(selector);
+    }
     if (BrowserBridge.extract == null) throw Exception('Browser not ready');
     return await BrowserBridge.extract!(selector);
   }
@@ -399,6 +410,9 @@ class MCPServer {
   }
   
   static Future<String> _getCurrentPageContent() async {
+    if (SidecarClient.enabled) {
+      return await SidecarClient.content();
+    }
     if (BrowserBridge.getPageContent == null) throw Exception('Browser not ready');
     return await BrowserBridge.getPageContent!();
   }
