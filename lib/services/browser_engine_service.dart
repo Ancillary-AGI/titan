@@ -8,10 +8,12 @@ import '../services/storage_service.dart';
 import '../services/browser_security_service.dart';
 import '../services/javascript_engine_service.dart';
 import '../services/sandboxing_service.dart';
+import 'web_apis/implemented_apis.dart';
 
 class BrowserEngineService {
   static late InAppWebViewController? _controller;
   static final Map<String, InAppWebViewController> _tabControllers = {};
+  static final Map<String, ImplementedWebAPIs> _webAPIBridges = {};
   static final List<String> _blockedDomains = [];
   static bool _adBlockEnabled = true;
   static bool _javascriptEnabled = true;
@@ -105,10 +107,31 @@ class BrowserEngineService {
     
     // Setup security handlers
     await _setupSecurityHandlers(tabId, controller);
+    
+    // Initialize Web API Bridge
+    await _initializeWebAPIs(tabId, controller);
+  }
+  
+  /// Initialize Web APIs for a tab
+  static Future<void> _initializeWebAPIs(String tabId, InAppWebViewController controller) async {
+    try {
+      // Create and initialize actually implemented Web APIs
+      final webAPIs = ImplementedWebAPIs(controller, tabId);
+      await webAPIs.initialize();
+      _webAPIBridges[tabId] = webAPIs;
+      
+      print('Implemented Web APIs initialized for tab: $tabId');
+    } catch (e) {
+      print('Failed to initialize Web APIs for tab $tabId: $e');
+    }
   }
   
   static Future<void> unregisterController(String tabId) async {
     _tabControllers.remove(tabId);
+    
+    // Cleanup Web API Bridge
+    final webAPIBridge = _webAPIBridges.remove(tabId);
+    webAPIBridge?.dispose();
     
     // Cleanup security services
     await JavaScriptEngineService.cleanup(tabId);

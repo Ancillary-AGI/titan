@@ -528,4 +528,15 @@ class StorageService {
   static Future<void> removeSetting(String key) async {
     await _settingsBox.delete(key);
   }
+  
+  // Extension management methods
+  static Future<List<Map<String, dynamic>>> getExtensions() async {
+    final extensionsData = _settingsBox.get('installed_extensions');
+    if (extensionsData == null) return [];
+    return List<Map<String, dynamic>>.from(extensionsData['extensions'] ?? []);
+  }
+  
+  static Future<void> saveExtensions(List<Map<String, dynamic>> extensions) async {
+    await _settingsBox.put('installed_extensions', {'extensions': extensions});
+  }
 }

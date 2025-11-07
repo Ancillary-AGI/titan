@@ -45,7 +45,7 @@ class TabBarWidget extends StatelessWidget {
           // Tab counter and current tab info
           Expanded(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+              padding: EdgeInsets.symmetric(horizontal: TitanTheme.spaceMd),
               child: Row(
                 children: [
                   // Current tab favicon
@@ -66,7 +66,7 @@ class TabBarWidget extends StatelessWidget {
                             : const Icon(Icons.public, size: 20),
                   ),
                   
-                  SizedBox(width: AppTheme.spaceSm),
+                  SizedBox(width: TitanTheme.spaceSm),
                   
                   // Current tab title
                   Expanded(
@@ -82,12 +82,12 @@ class TabBarWidget extends StatelessWidget {
                   // Tab counter
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spaceSm,
-                      vertical: AppTheme.spaceXs,
+                      horizontal: TitanTheme.spaceSm,
+                      vertical: TitanTheme.spaceXs,
                     ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                      borderRadius: BorderRadius.circular(TitanTheme.radiusSm),
                     ),
                     child: Text(
                       '${tabs.length}',
@@ -199,8 +199,8 @@ class TabBarWidget extends StatelessWidget {
           onTap: () => onTabSelected(index),
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: isCompact ? AppTheme.spaceSm : AppTheme.spaceMd,
-              vertical: AppTheme.spaceSm,
+              horizontal: isCompact ? TitanTheme.spaceSm : TitanTheme.spaceMd,
+              vertical: TitanTheme.spaceSm,
             ),
             decoration: BoxDecoration(
               border: Border(
@@ -237,7 +237,7 @@ class TabBarWidget extends StatelessWidget {
                             ),
                 ),
                 
-                SizedBox(width: AppTheme.spaceSm),
+                SizedBox(width: TitanTheme.spaceSm),
                 
                 // Tab title
                 Expanded(
@@ -255,14 +255,14 @@ class TabBarWidget extends StatelessWidget {
                   ),
                 ),
                 
-                SizedBox(width: AppTheme.spaceXs),
+                SizedBox(width: TitanTheme.spaceXs),
                 
                 // Close button
                 InkWell(
                   onTap: () => onTabClosed(index),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  borderRadius: BorderRadius.circular(TitanTheme.radiusSm),
                   child: Container(
-                    padding: EdgeInsets.all(AppTheme.spaceXs),
+                    padding: EdgeInsets.all(TitanTheme.spaceXs),
                     child: Icon(
                       Icons.close,
                       size: isCompact ? 12 : 14,
@@ -347,14 +347,14 @@ class _MobileTabSwitcher extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusLg),
+          top: Radius.circular(TitanTheme.radiusLg),
         ),
       ),
       child: Column(
         children: [
           // Handle
           Container(
-            margin: EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+            margin: EdgeInsets.symmetric(vertical: TitanTheme.spaceSm),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
@@ -365,7 +365,7 @@ class _MobileTabSwitcher extends StatelessWidget {
           
           // Header
           Padding(
-            padding: EdgeInsets.all(AppTheme.spaceMd),
+            padding: EdgeInsets.all(TitanTheme.spaceMd),
             child: Row(
               children: [
                 Text(
@@ -385,7 +385,7 @@ class _MobileTabSwitcher extends StatelessWidget {
           // Tab grid
           Expanded(
             child: GridView.builder(
-              padding: EdgeInsets.all(AppTheme.spaceMd),
+              padding: EdgeInsets.all(TitanTheme.spaceMd),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio: 0.8,
@@ -398,13 +398,13 @@ class _MobileTabSwitcher extends StatelessWidget {
                 final isActive = index == activeIndex;
                 
                 return Card(
-                  elevation: isActive ? AppTheme.elevationMd : AppTheme.elevationSm,
+                  elevation: isActive ? TitanTheme.elevationMd : TitanTheme.elevationSm,
                   color: isActive 
                       ? Theme.of(context).colorScheme.primaryContainer
                       : null,
                   child: InkWell(
                     onTap: () => onTabSelected(index),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    borderRadius: BorderRadius.circular(TitanTheme.radiusMd),
                     child: Column(
                       children: [
                         // Tab preview (placeholder)
@@ -415,7 +415,7 @@ class _MobileTabSwitcher extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(AppTheme.radiusMd),
+                                top: Radius.circular(TitanTheme.radiusMd),
                               ),
                             ),
                             child: Center(
@@ -434,7 +434,7 @@ class _MobileTabSwitcher extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: Padding(
-                            padding: EdgeInsets.all(AppTheme.spaceSm),
+                            padding: EdgeInsets.all(TitanTheme.spaceSm),
                             child: Column(
                               children: [
                                 Row(
@@ -455,7 +455,7 @@ class _MobileTabSwitcher extends StatelessWidget {
                                           : const Icon(Icons.public, size: 16),
                                     ),
                                     
-                                    SizedBox(width: AppTheme.spaceSm),
+                                    SizedBox(width: TitanTheme.spaceSm),
                                     
                                     // Title
                                     Expanded(
@@ -472,16 +472,16 @@ class _MobileTabSwitcher extends StatelessWidget {
                                     // Close button
                                     InkWell(
                                       onTap: () => onTabClosed(index),
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                                      borderRadius: BorderRadius.circular(TitanTheme.radiusSm),
                                       child: Padding(
-                                        padding: EdgeInsets.all(AppTheme.spaceXs),
+                                        padding: EdgeInsets.all(TitanTheme.spaceXs),
                                         child: const Icon(Icons.close, size: 16),
                                       ),
                                     ),
                                   ],
                                 ),
                                 
-                                SizedBox(height: AppTheme.spaceXs),
+                                SizedBox(height: TitanTheme.spaceXs),
                                 
                                 // URL
                                 Text(

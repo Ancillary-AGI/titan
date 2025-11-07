@@ -28,9 +28,10 @@ class ServiceLocator {
       
       // Browser services
       serviceLocator.registerLazySingleton<BrowserService>(() => BrowserService());
-      serviceLocator.registerLazySingleton<AIService>(() => AIService());
+      // AI service is static, no need to register
       serviceLocator.registerLazySingleton<ExtensionService>(() => ExtensionService());
-      serviceLocator.registerLazySingleton<AccountService>(() => AccountService());
+      // Account service is static, initialize directly
+      await AccountService.init();
       
       // Initialize services in order
       await serviceLocator<StorageService>().initialize();
@@ -45,7 +46,7 @@ class ServiceLocator {
       await serviceLocator<BrowserService>().initialize();
       Logger.instance.info('Browser service initialized');
       
-      await serviceLocator<AIService>().initialize();
+      await AIService.init();
       Logger.instance.info('AI service initialized');
       
       await serviceLocator<ExtensionService>().initialize();

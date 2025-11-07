@@ -42,7 +42,7 @@ class BrowserAppBar extends ConsumerWidget {
 
   Widget _buildMobileAppBar(BuildContext context, WidgetRef ref, activeTab) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spaceSm),
+      padding: EdgeInsets.all(TitanTheme.spaceSm),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
@@ -100,7 +100,7 @@ class BrowserAppBar extends ConsumerWidget {
             ],
           ),
           
-          SizedBox(height: AppTheme.spaceSm),
+          SizedBox(height: TitanTheme.spaceSm),
           
           // URL bar (full width)
           _buildUrlBar(context, isMobile: true),
@@ -111,7 +111,7 @@ class BrowserAppBar extends ConsumerWidget {
 
   Widget _buildTabletAppBar(BuildContext context, WidgetRef ref, activeTab) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spaceMd),
+      padding: EdgeInsets.all(TitanTheme.spaceMd),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
@@ -125,12 +125,12 @@ class BrowserAppBar extends ConsumerWidget {
           // Navigation buttons
           _buildNavigationButtons(context, activeTab),
           
-          SizedBox(width: AppTheme.spaceMd),
+          SizedBox(width: TitanTheme.spaceMd),
           
           // URL bar
           Expanded(child: _buildUrlBar(context)),
           
-          SizedBox(width: AppTheme.spaceMd),
+          SizedBox(width: TitanTheme.spaceMd),
           
           // Action buttons
           _buildActionButtons(context, ref, showLabels: false),
@@ -141,7 +141,7 @@ class BrowserAppBar extends ConsumerWidget {
 
   Widget _buildDesktopAppBar(BuildContext context, WidgetRef ref, activeTab) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spaceMd),
+      padding: EdgeInsets.all(TitanTheme.spaceMd),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
@@ -155,12 +155,12 @@ class BrowserAppBar extends ConsumerWidget {
           // Navigation buttons
           _buildNavigationButtons(context, activeTab),
           
-          SizedBox(width: AppTheme.spaceLg),
+          SizedBox(width: TitanTheme.spaceLg),
           
           // URL bar
           Expanded(child: _buildUrlBar(context)),
           
-          SizedBox(width: AppTheme.spaceLg),
+          SizedBox(width: TitanTheme.spaceLg),
           
           // Action buttons with labels
           _buildActionButtons(context, ref, showLabels: true),
@@ -207,7 +207,7 @@ class BrowserAppBar extends ConsumerWidget {
       height: isMobile ? 48 : 44,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(isMobile ? AppTheme.radiusMd : AppTheme.radiusXl),
+        borderRadius: BorderRadius.circular(isMobile ? TitanTheme.radiusMd : TitanTheme.radiusXl),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
         ),
@@ -220,7 +220,7 @@ class BrowserAppBar extends ConsumerWidget {
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
           prefixIcon: Padding(
-            padding: EdgeInsets.all(AppTheme.spaceSm),
+            padding: EdgeInsets.all(TitanTheme.spaceSm),
             child: Icon(
               _getSecurityIcon(activeTab?.url),
               size: isMobile ? 20 : 18,
@@ -251,8 +251,8 @@ class BrowserAppBar extends ConsumerWidget {
           ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
-            horizontal: AppTheme.spaceMd,
-            vertical: AppTheme.spaceSm,
+            horizontal: TitanTheme.spaceMd,
+            vertical: TitanTheme.spaceSm,
           ),
         ),
         onSubmitted: onNavigate,
@@ -273,7 +273,7 @@ class BrowserAppBar extends ConsumerWidget {
             icon: const Icon(Icons.developer_mode),
             label: const Text('Dev Tools'),
           ),
-          SizedBox(width: AppTheme.spaceSm),
+          SizedBox(width: TitanTheme.spaceSm),
           TextButton.icon(
             onPressed: onToggleAI,
             icon: const Icon(Icons.smart_toy),
@@ -292,7 +292,7 @@ class BrowserAppBar extends ConsumerWidget {
           ),
         ],
         
-        SizedBox(width: AppTheme.spaceSm),
+        SizedBox(width: TitanTheme.spaceSm),
         _buildDesktopMenu(context, ref),
       ],
     );

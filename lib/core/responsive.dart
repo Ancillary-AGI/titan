@@ -2,18 +2,30 @@ import 'package:flutter/material.dart';
 
 /// Responsive breakpoints following Material Design guidelines
 class Breakpoints {
-  static const double mobile = 600;
-  static const double tablet = 840;
-  static const double desktop = 1200;
-  static const double largeDesktop = 1600;
+  static const double mobileSmall = 360;   // Small phones
+  static const double mobile = 600;         // Phones
+  static const double tabletSmall = 840;    // Small tablets
+  static const double tablet = 1024;        // Tablets
+  static const double desktop = 1280;       // Desktop
+  static const double desktopLarge = 1920;  // Large desktop
+  static const double desktopXL = 2560;     // Extra large desktop
 }
 
 /// Device type enumeration
 enum DeviceType {
+  mobileSmall,
   mobile,
+  tabletSmall,
   tablet,
   desktop,
-  largeDesktop,
+  desktopLarge,
+  desktopXL,
+}
+
+/// Screen orientation
+enum ScreenOrientation {
+  portrait,
+  landscape,
 }
 
 /// Responsive helper class for adaptive layouts
@@ -21,15 +33,56 @@ class Responsive {
   static DeviceType getDeviceType(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     
-    if (width < Breakpoints.mobile) {
+    if (width < Breakpoints.mobileSmall) {
+      return DeviceType.mobileSmall;
+    } else if (width < Breakpoints.mobile) {
       return DeviceType.mobile;
+    } else if (width < Breakpoints.tabletSmall) {
+      return DeviceType.tabletSmall;
     } else if (width < Breakpoints.tablet) {
       return DeviceType.tablet;
     } else if (width < Breakpoints.desktop) {
       return DeviceType.desktop;
+    } else if (width < Breakpoints.desktopLarge) {
+      return DeviceType.desktopLarge;
     } else {
-      return DeviceType.largeDesktop;
+      return DeviceType.desktopXL;
     }
+  }
+  
+  static ScreenOrientation getOrientation(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return size.width > size.height 
+        ? ScreenOrientation.landscape 
+        : ScreenOrientation.portrait;
+  }
+  
+  static bool isPortrait(BuildContext context) {
+    return getOrientation(context) == ScreenOrientation.portrait;
+  }
+  
+  static bool isLandscape(BuildContext context) {
+    return getOrientation(context) == ScreenOrientation.landscape;
+  }
+  
+  static double getWidth(BuildContext context) {
+    return MediaQuery.of(context).size.width;
+  }
+  
+  static double getHeight(BuildContext context) {
+    return MediaQuery.of(context).size.height;
+  }
+  
+  static EdgeInsets getSafeArea(BuildContext context) {
+    return MediaQuery.of(context).padding;
+  }
+  
+  static double getStatusBarHeight(BuildContext context) {
+    return MediaQuery.of(context).padding.top;
+  }
+  
+  static double getBottomInset(BuildContext context) {
+    return MediaQuery.of(context).viewInsets.bottom;
   }
   
   static bool isMobile(BuildContext context) {

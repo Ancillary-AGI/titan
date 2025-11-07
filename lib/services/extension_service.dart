@@ -47,8 +47,15 @@ class ExtensionService extends ChangeNotifier {
       }
       
       // Extract and install
-      final extensionDir = await _extractExtension(file, manifest.id);
-      final extension = Extension.fromManifest(manifest, extensionDir);
+      final extensionDir = await _extractExtension(file, manifest.name);
+      final extension = Extension(
+        id: manifest.name,
+        manifest: manifest,
+        status: ExtensionStatus.installed,
+        securityRating: SecurityRating.unverified,
+        installedAt: DateTime.now(),
+        installPath: extensionDir,
+      );
       
       _installedExtensions[extension.id] = extension;
       await _saveInstalledExtensions();
@@ -94,7 +101,7 @@ class ExtensionService extends ChangeNotifier {
     final extension = _installedExtensions[extensionId];
     if (extension == null) return;
     
-    extension.isEnabled = true;
+    _installedExtensions[extensionId] = extension.copyWith(status: ExtensionStatus.enabled);
     await _saveInstalledExtensions();
     
     // Start extension
@@ -107,7 +114,7 @@ class ExtensionService extends ChangeNotifier {
     final extension = _installedExtensions[extensionId];
     if (extension == null) return;
     
-    extension.isEnabled = false;
+    _installedExtensions[extensionId] = extension.copyWith(status: ExtensionStatus.disabled);
     await _saveInstalledExtensions();
     
     // Stop extension
@@ -130,7 +137,6 @@ class ExtensionService extends ChangeNotifier {
       await _loadExtensionScript(context);
       
       _contexts[extensionId] = context;
-      extension.isRunning = true;
       
       notifyListeners();
     } catch (e) {
@@ -140,12 +146,7 @@ class ExtensionService extends ChangeNotifier {
   
   /// Stop extension
   Future<void> stopExtension(String extensionId) async {
-    final extension = _installedExtensions[extensionId];
     final context = _contexts[extensionId];
-    
-    if (extension != null) {
-      extension.isRunning = false;
-    }
     
     if (context != null) {
       await context.dispose();

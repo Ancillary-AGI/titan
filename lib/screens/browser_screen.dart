@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:go_router/go_router.dart';
 
 import '../providers/browser_provider.dart';
-import '../providers/ai_provider.dart';
-import '../widgets/browser_app_bar.dart';
+import '../widgets/platform_adaptive.dart';
 import '../widgets/tab_bar_widget.dart';
-import '../widgets/ai_assistant_toggle.dart';
-import '../widgets/ai_assistant_panel.dart';
-import '../widgets/developer_tools_panel.dart';
 import '../services/storage_service.dart';
 import '../services/browser_engine_service.dart';
-import '../services/incognito_service.dart';
-import '../services/autofill_service.dart';
-import '../services/sandboxing_service.dart';
-import '../services/rendering_engine_service.dart';
-import '../services/networking_service.dart';
 import '../services/browser_bridge.dart';
 import '../core/responsive.dart';
-import '../core/theme.dart';
+import '../core/platform_theme.dart';
+import '../core/localization/app_localizations.dart';
 
 class BrowserScreen extends ConsumerStatefulWidget {
   final String? windowId;
@@ -38,10 +30,8 @@ class BrowserScreen extends ConsumerStatefulWidget {
 class _BrowserScreenState extends ConsumerState<BrowserScreen> {
   InAppWebViewController? _webViewController;
   bool _showAIPanel = false;
-  bool _showDevTools = false;
   final TextEditingController _urlController = TextEditingController();
   Map<String, dynamic>? _currentPageContext;
-  final GlobalKey<DeveloperToolsPanelState> _devToolsKey = GlobalKey<DeveloperToolsPanelState>();
 
   @override
   void initState() {
@@ -51,10 +41,6 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
   
   void _initializeServices() async {
     await BrowserEngineService.init();
-    await NetworkingService.init();
-    await AutofillService.init();
-    SandboxingService.init();
-    RenderingEngineService.init();
   }
 
   void _updateNavigationState() async {
@@ -75,24 +61,6 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
     final title = await _webViewController!.getTitle();
     if (title != null) {
       ref.read(browserProvider.notifier).setTabTitle(title);
-    }
-  }
-
-  void _updatePageContext() async {
-    if (_webViewController == null) return;
-    
-    try {
-      final result = await _webViewController!.evaluateJavascript(
-        source: 'window.titanAI ? window.titanAI.getPageContext() : null'
-      );
-      
-      if (result != null && result is Map) {
-        setState(() {
-          _currentPageContext = Map<String, dynamic>.from(result);
-        });
-      }
-    } catch (e) {
-      print('Failed to get page context: $e');
     }
   }
 
@@ -122,20 +90,11 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
   }
 
   Widget _buildMobileLayout(BuildContext context, browserState, activeTab) {
-    return Scaffold(
+    return PlatformScaffold(
       body: Column(
         children: [
           // Browser App Bar
-          BrowserAppBar(
-            urlController: _urlController,
-            onNavigate: _navigateToUrl,
-            onRefresh: () => _webViewController?.reload(),
-            onBack: () => _webViewController?.goBack(),
-            onForward: () => _webViewController?.goForward(),
-            onToggleAI: () => _showMobileAIPanel(context),
-            onSettings: () => context.go('/settings'),
-            onToggleDevTools: () => _showMobileDevTools(context),
-          ),
+          _buildAppBar(context),
           
           // Tab Bar
           TabBarWidget(
@@ -152,29 +111,15 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
           ),
         ],
       ),
-      
-      // Bottom navigation for mobile
       bottomNavigationBar: _buildMobileBottomNav(context),
     );
   }
 
   Widget _buildTabletLayout(BuildContext context, browserState, activeTab) {
-    return Scaffold(
+    return PlatformScaffold(
       body: Column(
         children: [
-          // Browser App Bar
-          BrowserAppBar(
-            urlController: _urlController,
-            onNavigate: _navigateToUrl,
-            onRefresh: () => _webViewController?.reload(),
-            onBack: () => _webViewController?.goBack(),
-            onForward: () => _webViewController?.goForward(),
-            onToggleAI: () => setState(() => _showAIPanel = !_showAIPanel),
-            onSettings: () => context.go('/settings'),
-            onToggleDevTools: () => setState(() => _showDevTools = !_showDevTools),
-          ),
-          
-          // Tab Bar
+          _buildAppBar(context),
           TabBarWidget(
             tabs: browserState.tabs,
             activeIndex: browserState.activeTabIndex,
@@ -182,65 +127,34 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
             onTabClosed: (index) => ref.read(browserProvider.notifier).closeTab(index),
             onNewTab: () => ref.read(browserProvider.notifier).addNewTab(),
           ),
-          
-          // Main Content
           Expanded(
-            child: Column(
+            child: Row(
               children: [
-                // Web View and AI Panel Row
                 Expanded(
-                  child: Row(
-                    children: [
-                      // Web View
-                      Expanded(
-                        flex: _showAIPanel ? 2 : 1,
-                        child: _buildWebView(context, activeTab),
-                      ),
-                      
-                      // AI Panel
-                      if (_showAIPanel)
-                        SizedBox(
-                          width: 400,
-                          child: AIAssistantPanel(
-                            pageContext: _currentPageContext,
-                            isVisible: _showAIPanel,
-                          ),
-                        ),
-                    ],
-                  ),
+                  flex: _showAIPanel ? 2 : 1,
+                  child: _buildWebView(context, activeTab),
                 ),
-                
-                // Developer Tools Panel
-                if (_showDevTools)
-                  DeveloperToolsPanel(key: _devToolsKey),
+                if (_showAIPanel)
+                  SizedBox(
+                    width: 400,
+                    child: Container(
+                      color: PlatformColors(context).surface,
+                      child: const Center(child: Text('AI Assistant Panel')),
+                    ),
+                  ),
               ],
             ),
           ),
         ],
       ),
-      
-      // Floating action buttons for tablet
-      floatingActionButton: _buildTabletFABs(context),
     );
   }
 
   Widget _buildDesktopLayout(BuildContext context, browserState, activeTab) {
-    return Scaffold(
+    return PlatformScaffold(
       body: Column(
         children: [
-          // Browser App Bar
-          BrowserAppBar(
-            urlController: _urlController,
-            onNavigate: _navigateToUrl,
-            onRefresh: () => _webViewController?.reload(),
-            onBack: () => _webViewController?.goBack(),
-            onForward: () => _webViewController?.goForward(),
-            onToggleAI: () => setState(() => _showAIPanel = !_showAIPanel),
-            onSettings: () => context.go('/settings'),
-            onToggleDevTools: () => setState(() => _showDevTools = !_showDevTools),
-          ),
-          
-          // Tab Bar
+          _buildAppBar(context),
           TabBarWidget(
             tabs: browserState.tabs,
             activeIndex: browserState.activeTabIndex,
@@ -248,68 +162,152 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
             onTabClosed: (index) => ref.read(browserProvider.notifier).closeTab(index),
             onNewTab: () => ref.read(browserProvider.notifier).addNewTab(),
           ),
-          
-          // Main Content
           Expanded(
-            child: Column(
+            child: Row(
               children: [
-                // Web View and AI Panel Row
                 Expanded(
-                  child: Row(
-                    children: [
-                      // Web View
-                      Expanded(
-                        flex: _showAIPanel ? 3 : 1,
-                        child: _buildWebView(context, activeTab),
-                      ),
-                      
-                      // AI Panel
-                      if (_showAIPanel)
-                        SizedBox(
-                          width: 350,
-                          child: AIAssistantPanel(
-                            pageContext: _currentPageContext,
-                            isVisible: _showAIPanel,
-                          ),
-                        ),
-                    ],
-                  ),
+                  flex: _showAIPanel ? 3 : 1,
+                  child: _buildWebView(context, activeTab),
                 ),
-                
-                // Developer Tools Panel
-                if (_showDevTools)
-                  DeveloperToolsPanel(key: _devToolsKey),
+                if (_showAIPanel)
+                  SizedBox(
+                    width: 350,
+                    child: Container(
+                      color: PlatformColors(context).surface,
+                      child: const Center(child: Text('AI Assistant Panel')),
+                    ),
+                  ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context) {
+    final browserState = ref.watch(browserProvider);
+    final activeTab = browserState.activeTab;
+    final l10n = context.l10n;
+    final isCompact = Responsive.isMobile(context);
+    
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? PlatformTheme.spaceSm : PlatformTheme.spaceMd,
+        vertical: PlatformTheme.spaceSm,
+      ),
+      decoration: BoxDecoration(
+        color: PlatformColors(context).surface,
+        border: Border(
+          bottom: BorderSide(
+            color: PlatformColors(context).onSurface.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Navigation buttons
+            if (!isCompact || Responsive.isLandscape(context)) ...[
+              PlatformIconButton(
+                onPressed: activeTab?.canGoBack == true 
+                    ? () => _webViewController?.goBack() 
+                    : null,
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.back 
+                    : Icons.arrow_back,
+                tooltip: l10n.back,
+              ),
+              PlatformIconButton(
+                onPressed: activeTab?.canGoForward == true 
+                    ? () => _webViewController?.goForward() 
+                    : null,
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.forward 
+                    : Icons.arrow_forward,
+                tooltip: l10n.forward,
+              ),
+            ],
+            PlatformIconButton(
+              onPressed: () => _webViewController?.reload(),
+              icon: PlatformTheme.isCupertinoPlatform 
+                  ? CupertinoIcons.refresh 
+                  : Icons.refresh,
+              tooltip: l10n.refresh,
+            ),
+            
+            SizedBox(width: isCompact ? PlatformTheme.spaceSm : PlatformTheme.spaceMd),
+            
+            // URL bar
+            Expanded(
+              child: PlatformTextField(
+                controller: _urlController,
+                placeholder: l10n.searchOrEnterUrl,
+                onSubmitted: _navigateToUrl,
+                prefix: Padding(
+                  padding: EdgeInsets.all(PlatformTheme.spaceSm),
+                  child: Icon(
+                    _getSecurityIcon(activeTab?.url),
+                    size: 18,
+                    color: _getSecurityColor(activeTab?.url, context),
+                  ),
+                ),
+              ),
+            ),
+            
+            SizedBox(width: isCompact ? PlatformTheme.spaceSm : PlatformTheme.spaceMd),
+            
+            // AI toggle (hide on very small screens in portrait)
+            if (!isCompact || Responsive.isLandscape(context))
+              PlatformIconButton(
+                onPressed: () => setState(() => _showAIPanel = !_showAIPanel),
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.sparkles 
+                    : Icons.smart_toy,
+                tooltip: l10n.aiAssistant,
+              ),
+            
+            // Menu
+            PlatformIconButton(
+              onPressed: () => _showMenu(context),
+              icon: PlatformTheme.isCupertinoPlatform 
+                  ? CupertinoIcons.ellipsis 
+                  : Icons.more_vert,
+              tooltip: l10n.menu,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildWebView(BuildContext context, activeTab) {
+    final l10n = context.l10n;
+    
     if (activeTab == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.web,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
+              PlatformTheme.isCupertinoPlatform 
+                  ? CupertinoIcons.globe 
+                  : Icons.web,
+              size: Responsive.getValue(context, mobile: 48.0, tablet: 56.0, desktop: 64.0),
+              color: PlatformColors(context).onSurface.withOpacity(0.5),
             ),
-            SizedBox(height: AppTheme.spaceMd),
+            SizedBox(height: PlatformTheme.spaceMd),
             Text(
-              'No active tab',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
+              l10n.noActiveTab,
+              style: TextStyle(
+                fontSize: Responsive.getValue(context, mobile: 16.0, tablet: 17.0, desktop: 18.0),
+                color: PlatformColors(context).onSurface.withOpacity(0.7),
               ),
             ),
-            SizedBox(height: AppTheme.spaceSm),
-            ElevatedButton.icon(
+            SizedBox(height: PlatformTheme.spaceSm),
+            PlatformButton(
               onPressed: () => ref.read(browserProvider.notifier).addNewTab(),
-              icon: const Icon(Icons.add),
-              label: const Text('New Tab'),
+              child: Text(l10n.newTab),
             ),
           ],
         ),
@@ -321,24 +319,32 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
         InAppWebView(
           initialUrlRequest: URLRequest(
             url: WebUri(activeTab.url == 'about:blank' 
-                ? 'titan://newtab' 
+                ? 'https://www.google.com' 
                 : activeTab.url),
           ),
           initialSettings: BrowserEngineService.getWebViewSettings(),
           onWebViewCreated: (controller) => _setupWebViewController(controller, activeTab),
           onLoadStart: (controller, url) => _handleLoadStart(controller, url),
           onLoadStop: (controller, url) => _handleLoadStop(controller, url),
-          shouldOverrideUrlLoading: (controller, navigationAction) async {
-            return NavigationActionPolicy.ALLOW;
-          },
-          shouldInterceptRequest: (controller, request) => _handleInterceptRequest(controller, request),
         ),
         
         if (activeTab.isLoading)
           Container(
-            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
-            child: const Center(
-              child: CircularProgressIndicator(),
+            color: PlatformColors(context).background.withOpacity(0.8),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const PlatformProgressIndicator(),
+                  SizedBox(height: PlatformTheme.spaceMd),
+                  Text(
+                    context.l10n.loading,
+                    style: TextStyle(
+                      color: PlatformColors(context).onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
       ],
@@ -346,71 +352,58 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
   }
 
   Widget _buildMobileBottomNav(BuildContext context) {
+    final l10n = context.l10n;
+    
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: PlatformColors(context).surface,
         border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor),
+          top: BorderSide(
+            color: PlatformColors(context).onSurface.withOpacity(0.1),
+          ),
         ),
       ),
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: AppTheme.spaceMd,
-            vertical: AppTheme.spaceSm,
+            horizontal: PlatformTheme.spaceMd,
+            vertical: PlatformTheme.spaceSm,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              IconButton(
-                onPressed: () => context.go('/bookmarks'),
-                icon: const Icon(Icons.bookmark),
-                tooltip: 'Bookmarks',
+              PlatformIconButton(
+                onPressed: () {},
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.bookmark 
+                    : Icons.bookmark,
+                tooltip: l10n.bookmarks,
               ),
-              IconButton(
-                onPressed: () => context.go('/history'),
-                icon: const Icon(Icons.history),
-                tooltip: 'History',
+              PlatformIconButton(
+                onPressed: () {},
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.time 
+                    : Icons.history,
+                tooltip: l10n.history,
               ),
-              IconButton(
-                onPressed: () => _showMobileAIPanel(context),
-                icon: const Icon(Icons.smart_toy),
-                tooltip: 'AI Assistant',
+              PlatformIconButton(
+                onPressed: () => setState(() => _showAIPanel = !_showAIPanel),
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.sparkles 
+                    : Icons.smart_toy,
+                tooltip: l10n.aiAssistant,
               ),
-              IconButton(
-                onPressed: () => _showMobileDevTools(context),
-                icon: const Icon(Icons.developer_mode),
-                tooltip: 'Developer Tools',
-              ),
-              IconButton(
-                onPressed: () => context.go('/settings'),
-                icon: const Icon(Icons.settings),
-                tooltip: 'Settings',
+              PlatformIconButton(
+                onPressed: () {},
+                icon: PlatformTheme.isCupertinoPlatform 
+                    ? CupertinoIcons.settings 
+                    : Icons.settings,
+                tooltip: l10n.settings,
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTabletFABs(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        FloatingActionButton(
-          heroTag: "devtools",
-          mini: true,
-          onPressed: () => setState(() => _showDevTools = !_showDevTools),
-          child: Icon(_showDevTools ? Icons.close : Icons.developer_mode),
-        ),
-        SizedBox(height: AppTheme.spaceSm),
-        FloatingActionButton(
-          heroTag: "ai",
-          onPressed: () => setState(() => _showAIPanel = !_showAIPanel),
-          child: Icon(_showAIPanel ? Icons.close : Icons.smart_toy),
-        ),
-      ],
     );
   }
 
@@ -430,50 +423,16 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
     _webViewController = controller;
     BrowserEngineService.registerController(activeTab.id, controller);
 
-    // Wire BrowserBridge so MCP/tools can drive the browser
+    // Wire BrowserBridge
     BrowserBridge.navigateToUrl = (String url) async {
       _navigateToUrl(url);
       return 'Navigated to: $url';
-    };
-    
-    BrowserBridge.clickElement = (String selector) async {
-      final js = "(() => { const el = document.querySelector('${selector.replaceAll("'", "\\'")}'); if (el) { el.click(); return 'ok'; } return 'not_found'; })()";
-      await _webViewController?.evaluateJavascript(source: js);
-      return 'Clicked: $selector';
-    };
-    
-    BrowserBridge.extract = (String selector, {String? attribute}) async {
-      final attr = attribute ?? 'textContent';
-      final js = "(() => { const el = document.querySelector('${selector.replaceAll("'", "\\'")}'); if (!el) return ''; const v = el['$attr']; return (v || '').toString(); })()";
-      final res = await _webViewController?.evaluateJavascript(source: js);
-      return res?.toString() ?? '';
-    };
-    
-    BrowserBridge.fillForm = (Map<String, dynamic> fields) async {
-      final entries = fields.entries.map((e) => "{sel: '${e.key.replaceAll("'", "\\'")}', val: '${(e.value?.toString() ?? '').replaceAll("'", "\\'")}'}").join(',');
-      final js = "(() => { const fields = [$entries]; fields.forEach(f => { const el = document.querySelector(f.sel); if (el) { el.value = f.val; el.dispatchEvent(new Event('input', {bubbles:true})); } }); return 'ok'; })()";
-      await _webViewController?.evaluateJavascript(source: js);
-      return 'Form filled';
     };
     
     BrowserBridge.getPageContent = () async {
       final js = "document.documentElement.outerHTML";
       final res = await _webViewController?.evaluateJavascript(source: js);
       return res?.toString() ?? '';
-    };
-    
-    BrowserBridge.getTabsInfo = () async {
-      final tabs = ref.read(browserProvider).tabs;
-      return tabs.map((t) => {
-        'id': t.id,
-        'title': t.title,
-        'url': t.url,
-        'isLoading': t.isLoading,
-        'canGoBack': t.canGoBack,
-        'canGoForward': t.canGoForward,
-        'incognito': t.incognito,
-        'lastAccessed': t.lastAccessed.toIso8601String(),
-      }).toList();
     };
     
     BrowserBridge.getCurrentTab = () async {
@@ -484,50 +443,8 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
         'title': t.title,
         'url': t.url,
         'isLoading': t.isLoading,
-        'canGoBack': t.canGoBack,
-        'canGoForward': t.canGoForward,
-        'incognito': t.incognito,
-        'lastAccessed': t.lastAccessed.toIso8601String(),
       };
     };
-
-    // Add JavaScript handlers
-    controller.addJavaScriptHandler(
-      handlerName: 'aiContextReady',
-      callback: (args) {
-        if (args.isNotEmpty) {
-          setState(() {
-            _currentPageContext = Map<String, dynamic>.from(args[0]);
-          });
-        }
-      },
-    );
-    
-    // Dev console handlers: forward to DevTools panel
-    controller.addJavaScriptHandler(
-      handlerName: 'devConsoleLog',
-      callback: (args) {
-        if (args.isNotEmpty) {
-          _devToolsKey.currentState?.addConsoleLog('log', args[0].toString());
-        }
-      },
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'devConsoleError',
-      callback: (args) {
-        if (args.isNotEmpty) {
-          _devToolsKey.currentState?.addConsoleLog('error', args[0].toString());
-        }
-      },
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'devConsoleWarn',
-      callback: (args) {
-        if (args.isNotEmpty) {
-          _devToolsKey.currentState?.addConsoleLog('warn', args[0].toString());
-        }
-      },
-    );
   }
 
   void _handleLoadStart(InAppWebViewController controller, WebUri? url) {
@@ -542,11 +459,6 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
     _updateNavigationState();
     _updatePageTitle();
     
-    // Inject AI context script
-    await BrowserEngineService.injectAIContextScript(controller);
-    _updatePageContext();
-    
-    // Add to history (skip internal schemes and incognito)
     if (url != null && !url.toString().startsWith('titan://')) {
       final current = ref.read(browserProvider).activeTab;
       if (current == null || !current.incognito) {
@@ -556,55 +468,126 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
     }
   }
 
-  Future<WebResourceResponse?> _handleInterceptRequest(
-    InAppWebViewController controller,
-    WebResourceRequest request,
-  ) async {
-    final activeTab = ref.read(browserProvider).activeTab;
-    final response = await BrowserEngineService.shouldInterceptRequest(
-      controller, 
-      request, 
-      activeTab?.id ?? 'unknown'
-    );
-    
-    // Log network request for developer tools
-    _devToolsKey.currentState?.addNetworkLog({
-      'url': request.url.toString(),
-      'method': request.method,
-      'timestamp': DateTime.now().toIso8601String(),
-      'status': 200,
-    });
-    return response;
+  IconData _getSecurityIcon(String? url) {
+    if (url == null) {
+      return PlatformTheme.isCupertinoPlatform 
+          ? CupertinoIcons.search 
+          : Icons.search;
+    }
+    if (url.startsWith('https://')) {
+      return PlatformTheme.isCupertinoPlatform 
+          ? CupertinoIcons.lock_fill 
+          : Icons.lock;
+    }
+    if (url.startsWith('http://')) {
+      return PlatformTheme.isCupertinoPlatform 
+          ? CupertinoIcons.info_circle 
+          : Icons.info_outline;
+    }
+    return PlatformTheme.isCupertinoPlatform 
+        ? CupertinoIcons.search 
+        : Icons.search;
   }
 
-  void _showMobileAIPanel(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppTheme.radiusLg),
+  Color _getSecurityColor(String? url, BuildContext context) {
+    if (url == null) return PlatformColors(context).onSurface;
+    if (url.startsWith('https://')) {
+      return PlatformTheme.isCupertinoPlatform 
+          ? CupertinoColors.systemGreen 
+          : Colors.green;
+    }
+    if (url.startsWith('http://')) {
+      return PlatformTheme.isCupertinoPlatform 
+          ? CupertinoColors.systemOrange 
+          : Colors.orange;
+    }
+    return PlatformColors(context).onSurface;
+  }
+  
+  void _showMenu(BuildContext context) {
+    final l10n = context.l10n;
+    
+    if (PlatformTheme.isCupertinoPlatform) {
+      showCupertinoModalPopup(
+        context: context,
+        builder: (context) => CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.bookmarks),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.history),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.downloads),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.settings),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                ref.read(browserProvider.notifier).addNewTab(incognito: true);
+              },
+              child: Text(l10n.newIncognitoWindow),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
           ),
         ),
-        child: AIAssistantPanel(
-          pageContext: _currentPageContext,
-          isVisible: true,
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(PlatformTheme.radiusLg),
+          ),
         ),
-      ),
-    );
-  }
-
-  void _showMobileDevTools(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DeveloperToolsPanel(key: _devToolsKey),
-    );
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.bookmark),
+                title: Text(l10n.bookmarks),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.history),
+                title: Text(l10n.history),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.download),
+                title: Text(l10n.downloads),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: Text(l10n.settings),
+                onTap: () => Navigator.pop(context),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.visibility_off),
+                title: Text(l10n.newIncognitoWindow),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref.read(browserProvider.notifier).addNewTab(incognito: true);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   @override

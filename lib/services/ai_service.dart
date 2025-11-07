@@ -14,18 +14,27 @@ class AIService {
   static String _defaultModel = 'gpt-4';
   static double _defaultTemperature = 0.7;
   static int _maxTokens = 4000;
+  static bool _isInitialized = false;
   
   // Task execution tracking
   static final Map<String, StreamController<AITask>> _taskStreams = {};
   static final Map<String, Timer> _taskTimers = {};
   
   static Future<void> init() async {
+    if (_isInitialized) return;
+    
     // Load API keys from storage
     _openAIKey = await StorageService.getString('openai_api_key');
     _anthropicKey = await StorageService.getString('anthropic_api_key');
     _defaultModel = await StorageService.getString('ai_default_model') ?? 'gpt-4';
     _defaultTemperature = await StorageService.getDouble('ai_temperature') ?? 0.7;
     _maxTokens = await StorageService.getInt('ai_max_tokens') ?? 4000;
+    
+    _isInitialized = true;
+  }
+  
+  Future<void> initialize() async {
+    await init();
   }
   
   static Future<void> setOpenAIKey(String key) async {
