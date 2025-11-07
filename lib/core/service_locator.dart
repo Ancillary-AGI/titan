@@ -34,7 +34,7 @@ class ServiceLocator {
       await AccountService.init();
       
       // Initialize services in order
-      await serviceLocator<StorageService>().initialize();
+      await StorageService.init();
       Logger.instance.info('Storage service initialized');
       
       await serviceLocator<NetworkService>().initialize();

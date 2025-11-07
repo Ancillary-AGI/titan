@@ -595,7 +595,7 @@ class BrowserSecurityService {
     
     // Check for obfuscated JavaScript
     final obfuscationPatterns = [
-      RegExp(r'eval\s*\(\s*["\'].*["\'].*\)', caseSensitive: false),
+      RegExp(r"eval\s*\(\s*[\"'].*[\"'].*\)", caseSensitive: false),
       RegExp(r'document\.write\s*\(\s*unescape', caseSensitive: false),
       RegExp(r'String\.fromCharCode', caseSensitive: false),
       RegExp(r'\\x[0-9a-f]{2}', caseSensitive: false),
@@ -639,7 +639,7 @@ class BrowserSecurityService {
     final threats = <Map<String, dynamic>>[];
     
     // Check for forms without HTTPS
-    final formPattern = RegExp(r'<form[^>]*action=["\']([^"\']*)["\']', caseSensitive: false);
+    final formPattern = RegExp(r"<form[^>]*action=[\"']([^\"']*)[\"']", caseSensitive: false);
     final matches = formPattern.allMatches(content);
     
     for (final match in matches) {
@@ -689,7 +689,7 @@ class BrowserSecurityService {
     
     // Check for external data transmission
     final transmissionPatterns = [
-      RegExp(r'fetch\s*\(\s*["\'][^"\']*["\']', caseSensitive: false),
+      RegExp(r"fetch\s*\(\s*[\"'][^\"']*[\"']", caseSensitive: false),
       RegExp(r'XMLHttpRequest', caseSensitive: false),
       RegExp(r'new\s+Image\s*\(\s*\).*src\s*=', caseSensitive: false),
     ];
@@ -734,7 +734,7 @@ class BrowserSecurityService {
     
     // Check for mining-related code patterns
     final miningPatterns = [
-      RegExp(r'new\s+Worker\s*\(\s*["\'][^"\']*\.js["\']', caseSensitive: false),
+      RegExp(r"new\s+Worker\s*\(\s*[\"'][^\"']*\.js[\"']", caseSensitive: false),
       RegExp(r'WebAssembly\.instantiate', caseSensitive: false),
       RegExp(r'crypto.*hash', caseSensitive: false),
     ];

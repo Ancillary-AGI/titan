@@ -95,7 +95,7 @@ class Responsive {
   
   static bool isDesktop(BuildContext context) {
     final type = getDeviceType(context);
-    return type == DeviceType.desktop || type == DeviceType.largeDesktop;
+    return type == DeviceType.desktop || type == DeviceType.desktopLarge || type == DeviceType.desktopXL;
   }
   
   static bool isMobileOrTablet(BuildContext context) {
@@ -108,19 +108,22 @@ class Responsive {
     required T mobile,
     T? tablet,
     T? desktop,
-    T? largeDesktop,
+    T? desktopLarge,
   }) {
     final deviceType = getDeviceType(context);
     
     switch (deviceType) {
+      case DeviceType.mobileSmall:
       case DeviceType.mobile:
         return mobile;
+      case DeviceType.tabletSmall:
       case DeviceType.tablet:
         return tablet ?? mobile;
       case DeviceType.desktop:
         return desktop ?? tablet ?? mobile;
-      case DeviceType.largeDesktop:
-        return largeDesktop ?? desktop ?? tablet ?? mobile;
+      case DeviceType.desktopLarge:
+      case DeviceType.desktopXL:
+        return desktopLarge ?? desktop ?? tablet ?? mobile;
     }
   }
   
@@ -185,7 +188,7 @@ class Responsive {
       mobile: 1,
       tablet: 2,
       desktop: 3,
-      largeDesktop: 4,
+      desktopLarge: 4,
     );
   }
   
@@ -196,7 +199,7 @@ class Responsive {
       mobile: double.infinity,
       tablet: 800,
       desktop: 1200,
-      largeDesktop: 1400,
+      desktopLarge: 1400,
     );
   }
 }
@@ -222,14 +225,14 @@ class ResponsiveLayout extends StatelessWidget {
   final Widget mobile;
   final Widget? tablet;
   final Widget? desktop;
-  final Widget? largeDesktop;
+  final Widget? desktopLarge;
   
   const ResponsiveLayout({
     super.key,
     required this.mobile,
     this.tablet,
     this.desktop,
-    this.largeDesktop,
+    this.desktopLarge,
   });
   
   @override
@@ -237,14 +240,17 @@ class ResponsiveLayout extends StatelessWidget {
     return ResponsiveBuilder(
       builder: (context, deviceType) {
         switch (deviceType) {
+          case DeviceType.mobileSmall:
           case DeviceType.mobile:
             return mobile;
+          case DeviceType.tabletSmall:
           case DeviceType.tablet:
             return tablet ?? mobile;
           case DeviceType.desktop:
             return desktop ?? tablet ?? mobile;
-          case DeviceType.largeDesktop:
-            return largeDesktop ?? desktop ?? tablet ?? mobile;
+          case DeviceType.desktopLarge:
+          case DeviceType.desktopXL:
+            return desktopLarge ?? desktop ?? tablet ?? mobile;
         }
       },
     );

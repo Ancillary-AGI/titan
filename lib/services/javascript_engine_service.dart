@@ -628,4 +628,5 @@ class _WASMModuleInfo {
   final Map<String, dynamic> exports;
   final Map<String, dynamic> imports;
   
-  const _WASMModuleInfo(this.exports, this.imports);
+  const _WASMModuleInfo(this.exports, this.imports);}
+

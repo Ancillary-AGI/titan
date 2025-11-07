@@ -82,8 +82,8 @@ class NetworkResponse {
 class NetworkingService {
   static late Dio _dio;
   static final Map<String, NetworkRequest> _activeRequests = {};
-  static final List<NetworkRequest> _requestHistory = {};
-  static final List<NetworkResponse> _responseHistory = {};
+  static final List<NetworkRequest> _requestHistory = [];
+  static final List<NetworkResponse> _responseHistory = [];
   static final Map<String, WebSocket> _webSockets = {};
   static bool _isInitialized = false;
   
