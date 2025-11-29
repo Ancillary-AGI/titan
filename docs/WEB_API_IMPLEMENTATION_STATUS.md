@@ -20,6 +20,9 @@ These APIs have custom Flutter implementations that bridge to native OS function
 | **Geolocation API** | ✅ Implemented | All | Yes |
 | **Vibration API** | ✅ Implemented | Mobile | No |
 | **Console Forwarding** | ✅ Implemented | All | No |
+| **Battery Status API** | ✅ Implemented | All | No |
+| **Network Information API** | ✅ Implemented | All | No |
+| **Screen Orientation API** | ✅ Implemented | All | No |
 
 ### Implementation Details
 
@@ -52,6 +55,27 @@ These APIs have custom Flutter implementations that bridge to native OS function
 - **Native Integration**: Flutter's `HapticFeedback` service
 - **Methods**: `vibrate()`
 - **Use Case**: Haptic feedback on mobile devices
+
+#### Battery Status API
+- **File**: `lib/services/web_apis/implemented_apis.dart`
+- **Native Integration**: `battery_plus` package
+- **Methods**: `navigator.getBattery()`
+- **Use Case**: Get device battery level and charging status
+- **Returns**: Battery level (0.0-1.0), charging state, charging/discharging time
+
+#### Network Information API
+- **File**: `lib/services/web_apis/implemented_apis.dart`
+- **Native Integration**: `connectivity_plus` package
+- **Methods**: `navigator.connection`
+- **Use Case**: Get network connection type and speed information
+- **Returns**: Connection type (wifi/cellular/ethernet), effective type, downlink speed, RTT
+
+#### Screen Orientation API
+- **File**: `lib/services/web_apis/implemented_apis.dart`
+- **Native Integration**: Flutter's `SystemChrome` service
+- **Methods**: `screen.orientation.lock()`, `screen.orientation.unlock()`, `screen.orientation.type`
+- **Use Case**: Lock/unlock screen orientation, get current orientation
+- **Returns**: Orientation type (portrait-primary, landscape-primary, etc.) and angle
 
 #### Console Forwarding
 - **File**: `lib/services/web_apis/implemented_apis.dart`
@@ -135,9 +159,9 @@ These APIs are planned for future implementation:
 
 | API | Priority | Estimated Version |
 |-----|----------|-------------------|
-| **Battery Status API** | Medium | 1.1.0 |
-| **Network Information API** | Medium | 1.1.0 |
-| **Screen Orientation API** | Low | 1.2.0 |
+| **Battery Status API** | ✅ Implemented | 1.0.0 |
+| **Network Information API** | ✅ Implemented | 1.0.0 |
+| **Screen Orientation API** | ✅ Implemented | 1.0.0 |
 | **Wake Lock API** | Low | 1.2.0 |
 | **Media Session API** | Low | 1.3.0 |
 | **Web Authentication API** | High | 2.0.0 |

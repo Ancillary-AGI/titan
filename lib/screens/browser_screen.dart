@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../providers/browser_provider.dart';
 import '../widgets/platform_adaptive.dart';
 import '../widgets/tab_bar_widget.dart';
+import '../widgets/ai_assistant_panel.dart';
 import '../services/storage_service.dart';
 import '../services/browser_engine_service.dart';
 import '../services/browser_bridge.dart';
@@ -91,24 +93,39 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
 
   Widget _buildMobileLayout(BuildContext context, browserState, activeTab) {
     return PlatformScaffold(
-      body: Column(
+      body: Stack(
         children: [
-          // Browser App Bar
-          _buildAppBar(context),
-          
-          // Tab Bar
-          TabBarWidget(
-            tabs: browserState.tabs,
-            activeIndex: browserState.activeTabIndex,
-            onTabSelected: _handleTabSelected,
-            onTabClosed: (index) => ref.read(browserProvider.notifier).closeTab(index),
-            onNewTab: () => ref.read(browserProvider.notifier).addNewTab(),
+          Column(
+            children: [
+              // Browser App Bar
+              _buildAppBar(context),
+              
+              // Tab Bar
+              TabBarWidget(
+                tabs: browserState.tabs,
+                activeIndex: browserState.activeTabIndex,
+                onTabSelected: _handleTabSelected,
+                onTabClosed: (index) => ref.read(browserProvider.notifier).closeTab(index),
+                onNewTab: () => ref.read(browserProvider.notifier).addNewTab(),
+              ),
+              
+              // Web View
+              Expanded(
+                child: _buildWebView(context, activeTab),
+              ),
+            ],
           ),
-          
-          // Web View
-          Expanded(
-            child: _buildWebView(context, activeTab),
-          ),
+          // AI Panel overlay for mobile
+          if (_showAIPanel)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: AIAssistantCollapsiblePane(
+                isVisible: _showAIPanel,
+                pageContext: _currentPageContext,
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: _buildMobileBottomNav(context),
@@ -137,9 +154,9 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
                 if (_showAIPanel)
                   SizedBox(
                     width: 400,
-                    child: Container(
-                      color: PlatformColors(context).surface,
-                      child: const Center(child: Text('AI Assistant Panel')),
+                    child: AIAssistantPanel(
+                      pageContext: _currentPageContext,
+                      isVisible: _showAIPanel,
                     ),
                   ),
               ],
@@ -172,9 +189,9 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
                 if (_showAIPanel)
                   SizedBox(
                     width: 350,
-                    child: Container(
-                      color: PlatformColors(context).surface,
-                      child: const Center(child: Text('AI Assistant Panel')),
+                    child: AIAssistantPanel(
+                      pageContext: _currentPageContext,
+                      isVisible: _showAIPanel,
                     ),
                   ),
               ],
@@ -323,7 +340,10 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
                 : activeTab.url),
           ),
           initialSettings: BrowserEngineService.getWebViewSettings(),
-          onWebViewCreated: (controller) => _setupWebViewController(controller, activeTab),
+          onWebViewCreated: (controller) {
+            // Setup webview controller asynchronously
+            Future.microtask(() => _setupWebViewController(controller, activeTab));
+          },
           onLoadStart: (controller, url) => _handleLoadStart(controller, url),
           onLoadStop: (controller, url) => _handleLoadStop(controller, url),
         ),
@@ -419,9 +439,26 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
     }
   }
 
-  void _setupWebViewController(InAppWebViewController controller, activeTab) {
+  void _setupWebViewController(InAppWebViewController controller, activeTab) async {
     _webViewController = controller;
     BrowserEngineService.registerController(activeTab.id, controller);
+
+    // Inject AI context script immediately
+    await BrowserEngineService.injectAIContextScript(controller);
+    
+    // Set up handler for AI context ready callback
+    controller.addJavaScriptHandler(
+      handlerName: 'aiContextReady',
+      callback: (args) {
+        if (args.isNotEmpty && args[0] is Map) {
+          if (mounted) {
+            setState(() {
+              _currentPageContext = Map<String, dynamic>.from(args[0] as Map);
+            });
+          }
+        }
+      },
+    );
 
     // Wire BrowserBridge
     BrowserBridge.navigateToUrl = (String url) async {
@@ -464,6 +501,99 @@ class _BrowserScreenState extends ConsumerState<BrowserScreen> {
       if (current == null || !current.incognito) {
         final title = await controller.getTitle() ?? 'Untitled';
         StorageService.addToHistory(url.toString(), title);
+      }
+      
+      // Extract page context for AI assistant
+      await _extractPageContext(controller, url.toString());
+    }
+  }
+  
+  /// Extract page context for AI assistant
+  Future<void> _extractPageContext(InAppWebViewController controller, String url) async {
+    try {
+      // Inject AI context script if not already injected
+      await BrowserEngineService.injectAIContextScript(controller);
+      
+      // Get page context using the injected script
+      final contextScript = '''
+        (function() {
+          if (window.titanAI && window.titanAI.getPageContext) {
+            return window.titanAI.getPageContext();
+          }
+          return {
+            title: document.title || '',
+            url: window.location.href || '',
+            content: document.body ? document.body.innerText.substring(0, 5000) : '',
+            forms: [],
+            links: [],
+            images: []
+          };
+        })();
+      ''';
+      
+      final contextResult = await controller.evaluateJavascript(source: contextScript);
+      
+      if (contextResult != null) {
+        // Parse the result (it comes as a JSON string)
+        try {
+          final contextMap = Map<String, dynamic>.from(
+            jsonDecode(contextResult.toString())
+          );
+          
+          setState(() {
+            _currentPageContext = {
+              'title': contextMap['title'] ?? '',
+              'url': contextMap['url'] ?? url,
+              'content': contextMap['content'] ?? '',
+              'forms': contextMap['forms'] ?? [],
+              'links': contextMap['links'] ?? [],
+              'images': contextMap['images'] ?? [],
+            };
+          });
+        } catch (e) {
+          // If parsing fails, create basic context
+          final title = await controller.getTitle() ?? 'Untitled';
+          setState(() {
+            _currentPageContext = {
+              'title': title,
+              'url': url,
+              'content': '',
+              'forms': [],
+              'links': [],
+              'images': [],
+            };
+          });
+        }
+      } else {
+        // Fallback to basic context
+        final title = await controller.getTitle() ?? 'Untitled';
+        setState(() {
+          _currentPageContext = {
+            'title': title,
+            'url': url,
+            'content': '',
+            'forms': [],
+            'links': [],
+            'images': [],
+          };
+        });
+      }
+    } catch (e) {
+      // If extraction fails, create minimal context
+      try {
+        final title = await controller.getTitle() ?? 'Untitled';
+        setState(() {
+          _currentPageContext = {
+            'title': title,
+            'url': url,
+            'content': '',
+            'forms': [],
+            'links': [],
+            'images': [],
+          };
+        });
+      } catch (_) {
+        // Silently fail if we can't even get the title
       }
     }
   }

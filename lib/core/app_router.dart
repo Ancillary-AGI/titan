@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,6 +7,7 @@ import '../screens/settings_screen.dart';
 import '../screens/bookmarks_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/account_screen.dart';
+import '../screens/dev_tools_demo_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -42,6 +42,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/account',
         name: 'account',
         builder: (context, state) => const AccountScreen(),
+      ),
+      GoRoute(
+        path: '/dev-tools-demo',
+        name: 'dev-tools-demo',
+        builder: (context, state) => const DevToolsDemoScreen(),
       ),
     ],
   );

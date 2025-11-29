@@ -53,6 +53,11 @@ dependencies:
   share_plus: ^7.2.1
   geolocator: ^11.0.0
   permission_handler: ^11.0.1
+  battery_plus: ^5.0.1
+  connectivity_plus: ^5.0.2
+  
+  # File operations
+  open_file: ^3.3.2
   
   # Platform adaptive widgets
   flutter_platform_widgets: ^6.0.2

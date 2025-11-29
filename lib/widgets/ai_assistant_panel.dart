@@ -727,6 +727,8 @@ class _TaskCard extends StatelessWidget {
         return const Icon(Icons.error, size: 16, color: Colors.red);
       case AITaskStatus.cancelled:
         return const Icon(Icons.cancel, size: 16, color: Colors.grey);
+      case AITaskStatus.paused:
+        return const Icon(Icons.pause_circle, size: 16, color: Colors.blue);
     }
   }
 }

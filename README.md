@@ -246,6 +246,9 @@ These APIs have custom Flutter implementations that bridge to native OS function
 - **📍 Geolocation API** - Real GPS/location services with permissions
 - **📳 Vibration API** - Haptic feedback on mobile devices
 - **🛠️ Console Forwarding** - All console messages sent to DevTools
+- **🔋 Battery Status API** - Get device battery level and charging status
+- **📡 Network Information API** - Get network connection type and speed
+- **📱 Screen Orientation API** - Lock/unlock screen orientation
 
 ### 📱 Built-in WebView Support
 
@@ -303,6 +306,23 @@ if (permission === 'granted') {
 
 // Console forwarding - Actually implemented ✅
 console.log('This appears in DevTools');
+
+// Battery Status API - Actually implemented ✅
+const battery = await navigator.getBattery();
+console.log('Battery level:', battery.level * 100 + '%');
+console.log('Charging:', battery.charging);
+
+// Network Information API - Actually implemented ✅
+const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+console.log('Connection type:', connection.type);
+console.log('Effective type:', connection.effectiveType);
+console.log('Downlink:', connection.downlink, 'Mbps');
+
+// Screen Orientation API - Actually implemented ✅
+await screen.orientation.lock('portrait');
+const orientation = await screen.orientation.getOrientation();
+console.log('Orientation:', orientation.type, 'Angle:', orientation.angle);
+screen.orientation.unlock();
 
 // Standard Web APIs work automatically via WebView ✅
 fetch('https://api.example.com/data')

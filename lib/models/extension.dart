@@ -1,55 +1,54 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 /// Extension types supported by Titan Browser
 enum ExtensionType {
-  browserAction,    // Toolbar button extensions
-  pageAction,       // Page-specific actions
-  contentScript,    // Content modification scripts
-  background,       // Background service extensions
-  theme,           // Visual themes
-  devtools,        // Developer tools extensions
-  webRequest,      // Network request modification
-  contextMenu,     // Context menu additions
-  omnibox,         // Address bar extensions
-  bookmarks,       // Bookmark management
-  history,         // History management
-  tabs,            // Tab management
-  windows,         // Window management
-  storage,         // Data storage extensions
-  notifications,   // Notification extensions
-  ai,              // AI-powered extensions
+  browserAction, // Toolbar button extensions
+  pageAction, // Page-specific actions
+  contentScript, // Content modification scripts
+  background, // Background service extensions
+  theme, // Visual themes
+  devtools, // Developer tools extensions
+  webRequest, // Network request modification
+  contextMenu, // Context menu additions
+  omnibox, // Address bar extensions
+  bookmarks, // Bookmark management
+  history, // History management
+  tabs, // Tab management
+  windows, // Window management
+  storage, // Data storage extensions
+  notifications, // Notification extensions
+  ai, // AI-powered extensions
 }
 
 /// Extension permission levels
 enum ExtensionPermission {
   // Basic permissions
-  activeTab,       // Access to active tab
-  tabs,            // Access to tab information
-  storage,         // Local storage access
-  notifications,   // Show notifications
-  contextMenus,    // Add context menu items
-  
+  activeTab, // Access to active tab
+  tabs, // Access to tab information
+  storage, // Local storage access
+  notifications, // Show notifications
+  contextMenus, // Add context menu items
+
   // Advanced permissions
-  allUrls,         // Access to all websites
-  webRequest,      // Intercept network requests
+  allUrls, // Access to all websites
+  webRequest, // Intercept network requests
   webRequestBlocking, // Block network requests
-  cookies,         // Access to cookies
-  history,         // Access to browsing history
-  bookmarks,       // Access to bookmarks
-  downloads,       // Access to downloads
-  
+  cookies, // Access to cookies
+  history, // Access to browsing history
+  bookmarks, // Access to bookmarks
+  downloads, // Access to downloads
+
   // Sensitive permissions
   nativeMessaging, // Communicate with native apps
-  debugger,        // Debugging API access
-  desktopCapture,  // Screen capture
-  system,          // System information access
-  management,      // Extension management
-  
+  debugger, // Debugging API access
+  desktopCapture, // Screen capture
+  system, // System information access
+  management, // Extension management
+
   // AI permissions
-  aiAnalysis,      // AI page analysis
-  aiAutomation,    // AI automation features
-  aiLearning,      // AI learning from user behavior
+  aiAnalysis, // AI page analysis
+  aiAutomation, // AI automation features
+  aiLearning, // AI learning from user behavior
 }
 
 /// Extension manifest structure
@@ -71,7 +70,7 @@ class ExtensionManifest {
   final String? updateUrl;
   final int manifestVersion;
   final Map<String, dynamic> options;
-  
+
   const ExtensionManifest({
     required this.name,
     required this.version,
@@ -91,7 +90,7 @@ class ExtensionManifest {
     this.manifestVersion = 3,
     this.options = const {},
   });
-  
+
   factory ExtensionManifest.fromJson(Map<String, dynamic> json) {
     return ExtensionManifest(
       name: json['name'] ?? '',
@@ -100,11 +99,12 @@ class ExtensionManifest {
       author: json['author'],
       homepage: json['homepage'],
       permissions: (json['permissions'] as List<dynamic>?)
-          ?.map((p) => ExtensionPermission.values.firstWhere(
-                (perm) => perm.name == p,
-                orElse: () => ExtensionPermission.activeTab,
-              ))
-          .toList() ?? [],
+              ?.map((p) => ExtensionPermission.values.firstWhere(
+                    (perm) => perm.name == p,
+                    orElse: () => ExtensionPermission.activeTab,
+                  ))
+              .toList() ??
+          [],
       type: ExtensionType.values.firstWhere(
         (t) => t.name == json['type'],
         orElse: () => ExtensionType.browserAction,
@@ -121,26 +121,26 @@ class ExtensionManifest {
       options: Map<String, dynamic>.from(json['options'] ?? {}),
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'name': name,
-    'version': version,
-    'description': description,
-    'author': author,
-    'homepage': homepage,
-    'permissions': permissions.map((p) => p.name).toList(),
-    'type': type.name,
-    'browser_action': browserAction,
-    'page_action': pageAction,
-    'content_scripts': contentScripts,
-    'background': background,
-    'web_request': webRequest,
-    'matches': matches,
-    'icons': icons,
-    'update_url': updateUrl,
-    'manifest_version': manifestVersion,
-    'options': options,
-  };
+        'name': name,
+        'version': version,
+        'description': description,
+        'author': author,
+        'homepage': homepage,
+        'permissions': permissions.map((p) => p.name).toList(),
+        'type': type.name,
+        'browser_action': browserAction,
+        'page_action': pageAction,
+        'content_scripts': contentScripts,
+        'background': background,
+        'web_request': webRequest,
+        'matches': matches,
+        'icons': icons,
+        'update_url': updateUrl,
+        'manifest_version': manifestVersion,
+        'options': options,
+      };
 }
 
 /// Extension installation status
@@ -155,11 +155,11 @@ enum ExtensionStatus {
 
 /// Extension security rating
 enum SecurityRating {
-  safe,      // Verified safe by Titan team
-  trusted,   // From trusted developers
-  reviewed,  // Community reviewed
+  safe, // Verified safe by Titan team
+  trusted, // From trusted developers
+  reviewed, // Community reviewed
   unverified, // Not yet reviewed
-  warning,   // Has potential issues
+  warning, // Has potential issues
   dangerous, // Known security issues
 }
 
@@ -183,7 +183,7 @@ class Extension {
   final bool isOfficial;
   final bool isPremium;
   final double? price;
-  
+
   const Extension({
     required this.id,
     required this.manifest,
@@ -204,7 +204,7 @@ class Extension {
     this.isPremium = false,
     this.price,
   });
-  
+
   factory Extension.fromJson(Map<String, dynamic> json) {
     return Extension(
       id: json['id'] ?? '',
@@ -217,8 +217,9 @@ class Extension {
         (r) => r.name == json['security_rating'],
         orElse: () => SecurityRating.unverified,
       ),
-      installedAt: DateTime.parse(json['installed_at'] ?? DateTime.now().toIso8601String()),
-      lastUpdated: json['last_updated'] != null 
+      installedAt: DateTime.parse(
+          json['installed_at'] ?? DateTime.now().toIso8601String()),
+      lastUpdated: json['last_updated'] != null
           ? DateTime.parse(json['last_updated'])
           : null,
       installPath: json['install_path'] ?? '',
@@ -235,48 +236,48 @@ class Extension {
       price: json['price']?.toDouble(),
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'manifest': manifest.toJson(),
-    'status': status.name,
-    'security_rating': securityRating.name,
-    'installed_at': installedAt.toIso8601String(),
-    'last_updated': lastUpdated?.toIso8601String(),
-    'install_path': installPath,
-    'settings': settings,
-    'errors': errors,
-    'runtime': runtime,
-    'download_count': downloadCount,
-    'rating': rating,
-    'review_count': reviewCount,
-    'screenshots': screenshots,
-    'icon_url': iconUrl,
-    'is_official': isOfficial,
-    'is_premium': isPremium,
-    'price': price,
-  };
-  
+        'id': id,
+        'manifest': manifest.toJson(),
+        'status': status.name,
+        'security_rating': securityRating.name,
+        'installed_at': installedAt.toIso8601String(),
+        'last_updated': lastUpdated?.toIso8601String(),
+        'install_path': installPath,
+        'settings': settings,
+        'errors': errors,
+        'runtime': runtime,
+        'download_count': downloadCount,
+        'rating': rating,
+        'review_count': reviewCount,
+        'screenshots': screenshots,
+        'icon_url': iconUrl,
+        'is_official': isOfficial,
+        'is_premium': isPremium,
+        'price': price,
+      };
+
   /// Check if extension has specific permission
   bool hasPermission(ExtensionPermission permission) {
     return manifest.permissions.contains(permission);
   }
-  
+
   /// Check if extension is enabled
   bool get isEnabled => status == ExtensionStatus.enabled;
-  
+
   /// Check if extension is safe to use
   bool get isSafe => securityRating.index <= SecurityRating.reviewed.index;
-  
+
   /// Get extension icon
   String? getIcon(int size) {
     final icons = manifest.icons;
     final sizeStr = size.toString();
-    
+
     if (icons.containsKey(sizeStr)) {
       return icons[sizeStr];
     }
-    
+
     // Find closest size
     final availableSizes = icons.keys
         .map((k) => int.tryParse(k))
@@ -284,9 +285,9 @@ class Extension {
         .cast<int>()
         .toList()
       ..sort();
-    
+
     if (availableSizes.isEmpty) return iconUrl;
-    
+
     // Find closest size
     int closestSize = availableSizes.first;
     for (final availableSize in availableSizes) {
@@ -294,10 +295,10 @@ class Extension {
         closestSize = availableSize;
       }
     }
-    
+
     return icons[closestSize.toString()] ?? iconUrl;
   }
-  
+
   /// Create copy with updated status
   Extension copyWith({
     ExtensionStatus? status,
@@ -351,7 +352,7 @@ class MarketplaceExtension {
   final String? supportUrl;
   final List<String> compatibleVersions;
   final Map<String, dynamic> metadata;
-  
+
   const MarketplaceExtension({
     required this.id,
     required this.manifest,
@@ -373,7 +374,7 @@ class MarketplaceExtension {
     this.compatibleVersions = const [],
     this.metadata = const {},
   });
-  
+
   factory MarketplaceExtension.fromJson(Map<String, dynamic> json) {
     return MarketplaceExtension(
       id: json['id'] ?? '',
@@ -390,8 +391,10 @@ class MarketplaceExtension {
       isOfficial: json['is_official'] ?? false,
       isPremium: json['is_premium'] ?? false,
       price: json['price']?.toDouble(),
-      publishedAt: DateTime.parse(json['published_at'] ?? DateTime.now().toIso8601String()),
-      lastUpdated: DateTime.parse(json['last_updated'] ?? DateTime.now().toIso8601String()),
+      publishedAt: DateTime.parse(
+          json['published_at'] ?? DateTime.now().toIso8601String()),
+      lastUpdated: DateTime.parse(
+          json['last_updated'] ?? DateTime.now().toIso8601String()),
       category: json['category'] ?? 'Other',
       tags: List<String>.from(json['tags'] ?? []),
       changelogUrl: json['changelog_url'],
@@ -400,28 +403,28 @@ class MarketplaceExtension {
       metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'manifest': manifest.toJson(),
-    'security_rating': securityRating.name,
-    'download_count': downloadCount,
-    'rating': rating,
-    'review_count': reviewCount,
-    'screenshots': screenshots,
-    'icon_url': iconUrl,
-    'is_official': isOfficial,
-    'is_premium': isPremium,
-    'price': price,
-    'published_at': publishedAt.toIso8601String(),
-    'last_updated': lastUpdated.toIso8601String(),
-    'category': category,
-    'tags': tags,
-    'changelog_url': changelogUrl,
-    'support_url': supportUrl,
-    'compatible_versions': compatibleVersions,
-    'metadata': metadata,
-  };
+        'id': id,
+        'manifest': manifest.toJson(),
+        'security_rating': securityRating.name,
+        'download_count': downloadCount,
+        'rating': rating,
+        'review_count': reviewCount,
+        'screenshots': screenshots,
+        'icon_url': iconUrl,
+        'is_official': isOfficial,
+        'is_premium': isPremium,
+        'price': price,
+        'published_at': publishedAt.toIso8601String(),
+        'last_updated': lastUpdated.toIso8601String(),
+        'category': category,
+        'tags': tags,
+        'changelog_url': changelogUrl,
+        'support_url': supportUrl,
+        'compatible_versions': compatibleVersions,
+        'metadata': metadata,
+      };
 }
 
 /// Extension review
@@ -438,7 +441,7 @@ class ExtensionReview {
   final bool isVerified;
   final int helpfulCount;
   final List<String> tags;
-  
+
   const ExtensionReview({
     required this.id,
     required this.extensionId,
@@ -453,7 +456,7 @@ class ExtensionReview {
     this.helpfulCount = 0,
     this.tags = const [],
   });
-  
+
   factory ExtensionReview.fromJson(Map<String, dynamic> json) {
     return ExtensionReview(
       id: json['id'] ?? '',
@@ -463,8 +466,9 @@ class ExtensionReview {
       rating: (json['rating'] ?? 0.0).toDouble(),
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: json['updated_at'] != null 
+      createdAt: DateTime.parse(
+          json['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : null,
       isVerified: json['is_verified'] ?? false,
@@ -472,19 +476,19 @@ class ExtensionReview {
       tags: List<String>.from(json['tags'] ?? []),
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'extension_id': extensionId,
-    'user_id': userId,
-    'user_name': userName,
-    'rating': rating,
-    'title': title,
-    'content': content,
-    'created_at': createdAt.toIso8601String(),
-    'updated_at': updatedAt?.toIso8601String(),
-    'is_verified': isVerified,
-    'helpful_count': helpfulCount,
-    'tags': tags,
-  };
+        'id': id,
+        'extension_id': extensionId,
+        'user_id': userId,
+        'user_name': userName,
+        'rating': rating,
+        'title': title,
+        'content': content,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt?.toIso8601String(),
+        'is_verified': isVerified,
+        'helpful_count': helpfulCount,
+        'tags': tags,
+      };
 }

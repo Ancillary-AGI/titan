@@ -6,6 +6,8 @@ import '../services/security_service.dart';
 import '../services/network_service.dart';
 import '../services/extension_service.dart';
 import '../services/account_service.dart';
+import '../services/download_manager_service.dart';
+import '../services/bookmark_manager_service.dart';
 import 'error_handler.dart';
 import 'logger.dart';
 
@@ -51,6 +53,12 @@ class ServiceLocator {
       
       await serviceLocator<ExtensionService>().initialize();
       Logger.instance.info('Extension service initialized');
+      
+      await DownloadManagerService.initialize();
+      Logger.instance.info('Download manager service initialized');
+      
+      await BookmarkManagerService.initialize();
+      Logger.instance.info('Bookmark manager service initialized');
       
       Logger.instance.info('All services initialized successfully');
     } catch (e, stackTrace) {

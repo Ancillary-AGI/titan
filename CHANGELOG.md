@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **📱 Screen Orientation API**: Implemented screen orientation lock/unlock functionality
+  - `screen.orientation.lock()` - Lock screen to specific orientation
+  - `screen.orientation.unlock()` - Unlock screen orientation
+  - `screen.orientation.type` - Get current orientation type and angle
+  - Uses Flutter's SystemChrome for native orientation control
+
 ### Changed
 - 🔌 **Web API Implementation Overhaul**: Replaced stub implementations with real, functional Web APIs
   - Implemented actual Clipboard API with system clipboard integration

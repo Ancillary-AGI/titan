@@ -383,10 +383,18 @@ class DownloadManagerService {
   }
   
   static Future<String> _getDefaultDownloadPath(String filename) async {
-    final downloadsDir = await getDownloadsDirectory() ?? 
-                       await getApplicationDocumentsDirectory();
+    // Use application documents directory as default download location
+    // On mobile, this should be configured to use actual Downloads folder
+    final downloadsDir = await getApplicationDocumentsDirectory();
+    final downloadsPath = path.join(downloadsDir.path, 'Downloads');
     
-    final downloadPath = path.join(downloadsDir.path, filename);
+    // Create Downloads directory if it doesn't exist
+    final downloadsDirectory = Directory(downloadsPath);
+    if (!await downloadsDirectory.exists()) {
+      await downloadsDirectory.create(recursive: true);
+    }
+    
+    final downloadPath = path.join(downloadsPath, filename);
     
     // Ensure unique filename
     return await _ensureUniqueFilename(downloadPath);
